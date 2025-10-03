@@ -1,0 +1,38 @@
+/**
+ * Do not edit directly
+ * Generated on Mon, 29 Sep 2025 14:05:13 GMT
+ */
+
+:root {
+  --semantic-color-border-default: #EAEAEA;
+  --semantic-color-text-default: #222222;
+  --global-shadow-md: 0 2px 8px rgba(0,0,0,0.10);
+  --global-shadow-sm: 0 1px 2px rgba(0,0,0,0.06);
+  --global-font-weight-bold: 700;
+  --global-font-weight-medium: 500;
+  --global-font-weight-regular: 400;
+  --global-font-line-height-lg: 28;
+  --global-font-line-height-md: 24;
+  --global-font-line-height-sm: 20;
+  --global-font-size-lg: 18;
+  --global-font-size-md: 16;
+  --global-font-size-sm: 14;
+  --global-font-family: Inter, system-ui, Arial, sans-serif;
+  --global-radius-md: 12;
+  --global-radius-sm: 8;
+  --global-space-xl: 32;
+  --global-space-lg: 24;
+  --global-space-md: 16;
+  --global-space-sm: 8;
+  --global-space-xs: 4;
+  --global-color-paper: #FFFFFD;
+  --global-color-white: #FFFFFF;
+  --global-color-gray700: #6D6D6D;
+  --global-color-orange500: #F2994A;
+  --semantic-space-control-gap: var(--global-space-md);
+  --semantic-radius-control: var(--global-radius-sm);
+  --semantic-color-text-muted: var(--global-color-gray700);
+  --semantic-color-bg-card: var(--global-color-white);
+  --semantic-color-bg-page: var(--global-color-paper);
+  --semantic-color-brand-primary: var(--global-color-orange500);
+}

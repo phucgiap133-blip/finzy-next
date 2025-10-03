@@ -1,0 +1,43 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
+  --semantic-color-bg-page: #faf8f5;
+  --semantic-color-bg-card: #ffffff;
+  --semantic-color-text-default: #222222;
+  --semantic-color-text-muted: #7a7a7a;
+  --semantic-color-border-default: #ece7e1;
+  --semantic-color-brand-primary: #f29b49;
+}
+
+html, body, #__next {
+  height: 100%;
+}
+
+body {
+  font-family: var(--font-family);
+  background: var(--semantic-color-bg-page);
+  color: var(--semantic-color-text-default);
+}
+
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+:where(h1,h2,h3,h4,h5,h6){
+  font: inherit;
+  margin: 0;
+}
+
+@layer base {
+  h1 { @apply text-h1; }
+  h2 { @apply text-h2; }
+  h3 { @apply text-h3; }
+  h4 { @apply text-h4; }
+  h5 { @apply text-h5; }
+  h6 { @apply text-h6; }
+  p { @apply text-body; }
+  small, .caption { @apply text-caption; }
+  .btn-text { @apply text-btn; }
+}

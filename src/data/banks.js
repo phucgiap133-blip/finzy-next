@@ -1,0 +1,30 @@
+// src/data/banks.js
+const BANKS = [
+  "Vietcombank (VCB)",
+  "VietinBank (CTG)",
+  "BIDV",
+  "Agribank (AGR)",
+  "Techcombank (TCB)",
+  "MB Bank (MBB)",
+  "ACB",
+  "Sacombank (STB)",
+  "VPBank (VPB)",
+  "TPBank (TPB)",
+  "VIB",
+  "SHB",
+  "OCB",
+  "Eximbank (EIB)",
+  "SCB",
+  "SeABank (SSB)",
+  "VietCapital Bank (VCB)",
+  "BacABank (BAB)",
+  "ABBANK (ABB)",
+  "NCB",
+  "PVcomBank (PVCOM)",
+  "KienlongBank (KLB)",
+  "Nam A Bank (NAB)",
+  "Maritime Bank (MSB)",
+  "OceanBank (OCB)"
+];
+
+export default BANKS;
