@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 import Header from "../../../components/Header";
 import Button from "../../../components/Button";
@@ -7,8 +7,8 @@ import { useState } from "react";
 import PageContainer from "../../../components/PageContainer";
 
 export default function ForgotPasswordPage() {
-  const [email, setEmail] = useState("");
-  const [otp, setOtp] = useState("");
+  const [email, setEmail] = useState<string>("");
+  const [otp, setOtp] = useState<string>("");
 
   return (
     <>
@@ -20,13 +20,22 @@ export default function ForgotPasswordPage() {
             <div className="text-caption text-text-muted">Nhập email để nhận mã OTP</div>
           </div>
 
-          <Input label="Email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
+          <Input
+            label="Email"
+            type="email"
+            value={email}
+            onChange={(e) => setEmail((e.target as HTMLInputElement).value)}
+          />
 
           <div className="flex items-center gap-sm">
-            <Input label="Mã OTP" type="text" value={otp} onChange={(e) => setOtp(e.target.value)} placeholder="____" />
-            <button className="px-md py-sm rounded-control border border-border text-body">
-              Gửi mã
-            </button>
+            <Input
+              label="Mã OTP"
+              type="text"
+              value={otp}
+              onChange={(e) => setOtp((e.target as HTMLInputElement).value)}
+              placeholder="____"
+            />
+            <button className="px-md py-sm rounded-control border border-border text-body">Gửi mã</button>
           </div>
 
           <div className="text-caption text-text-muted">Mã có hiệu lực trong 5 phút</div>

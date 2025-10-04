@@ -5,7 +5,9 @@ import Header from "../../../components/Header";
 import Card from "../../../components/Card";
 import PageContainer from "../../../components/PageContainer";
 
-const BANKS = [
+type Bank = { code: string; name: string; logo: string };
+
+const BANKS: Bank[] = [
   { code: "VCB",  name: "Vietcombank",        logo: "https://logo.clearbit.com/vietcombank.com.vn" },
   { code: "CTG",  name: "VietinBank",         logo: "https://logo.clearbit.com/vietinbank.vn" },
   { code: "BIDV", name: "BIDV",               logo: "https://logo.clearbit.com/bidv.com.vn" },
@@ -43,9 +45,9 @@ const norm = (s: string) =>
     .replace(/\s+/g, " ");
 
 export default function SelectBankPage() {
-  const [query, setQuery] = useState("");
+  const [query, setQuery] = useState<string>("");
 
-  const filtered = useMemo(() => {
+  const filtered = useMemo<Bank[]>(() => {
     const q = norm(query);
     if (!q) return BANKS;
     return BANKS.filter((b) => norm(b.name).includes(q) || norm(b.code).includes(q));
@@ -80,7 +82,7 @@ export default function SelectBankPage() {
                   src={b.logo}
                   alt={b.name}
                   className="w-8 h-8 rounded-full object-cover"
-                  onError={(e) => (e.currentTarget.style.display = "none")}
+                  onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
                 />
                 <div className="flex-1">
                   <div className="text-body font-medium">{b.name}</div>

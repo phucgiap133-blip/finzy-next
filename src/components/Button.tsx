@@ -1,14 +1,11 @@
-// src/components/Button.js
-export default function Button({
-  children,
-  onClick,
-  type = "button",
-  className = "",
-}) {
+import { ButtonHTMLAttributes, PropsWithChildren } from "react";
+
+type Props = PropsWithChildren<ButtonHTMLAttributes<HTMLButtonElement>>;
+
+export default function Button({ children, className = "", ...rest }: Props) {
   return (
     <button
-      type={type}
-      onClick={onClick}
+      {...rest}
       className={
         `inline-flex items-center justify-center px-md py-sm rounded-control
          bg-brand-primary text-white text-btn shadow-sm hover:shadow-md transition ` + className

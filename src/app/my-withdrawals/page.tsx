@@ -6,14 +6,26 @@ import PageContainer from "../../../components/PageContainer";
 import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
 
-export default function RutPage({ embedded = false }) {
-  const [items, setItems] = useState([]);
+type WithdrawStatus = "Thành công" | "Đang xử lý" | "Thất bại";
+
+type Item = {
+  id: string;
+  amount: number; // âm
+  fee: number;
+  method: string;
+  createdAt: string; // ISO
+  status: WithdrawStatus;
+};
+
+export default function RutPage({ embedded = false }: { embedded?: boolean }) {
+  const [items, setItems] = useState<Item[]>([]);
 
   useEffect(() => {
-    api.history.withdrawals.get().then((res) => setItems(res.items));
+    api.history.withdrawals.get().then((res: { items: Item[] }) => setItems(res.items));
   }, []);
 
-  const tone = (status) => (status === "Thành công" ? "success" : status === "Đang xử lý" ? "warning" : "danger");
+  const tone = (status: WithdrawStatus) =>
+    status === "Thành công" ? "success" : status === "Đang xử lý" ? "warning" : "danger";
 
   return (
     <>
@@ -23,7 +35,6 @@ export default function RutPage({ embedded = false }) {
           {items.map((it) => (
             <div key={it.id} className="px-lg py-md border-b last:border-0 border-border">
               <div className="flex items-start gap-md">
-                {/* icon */}
                 <div className="w-9 h-9 rounded-full bg-[color:#F0E] text-white grid place-items-center text-caption font-bold shrink-0">
                   momo
                 </div>
@@ -59,9 +70,7 @@ export default function RutPage({ embedded = false }) {
         </div>
 
         {!embedded && (
-          <div className="text-center text-caption text-text-muted mt-md">
-            Phí rút: 0đ • Hỗ trợ 24/7
-          </div>
+          <div className="text-center text-caption text-text-muted mt-md">Phí rút: 0đ • Hỗ trợ 24/7</div>
         )}
       </PageContainer>
     </>

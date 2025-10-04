@@ -13,13 +13,15 @@ export default function ChangeBankFAQPage() {
       <PageContainer className="space-y-md">
         <div className="rounded-2xl border border-border bg-white p-md">
           <ol className="text-caption text-text-muted list-decimal pl-5 space-y-1">
-            <li>Vào <b>Ngân hàng</b> → <b>Liên kết ngân hàng</b>.</li>
-            <li>Nhập <b>Họ tên</b>, <b>Số tài khoản</b>, chọn <b>Ngân hàng</b>.</li>
+            <li>
+              Vào <b>Ngân hàng</b> → <b>Liên kết ngân hàng</b>.
+            </li>
+            <li>
+              Nhập <b>Họ tên</b>, <b>Số tài khoản</b>, chọn <b>Ngân hàng</b>.
+            </li>
             <li>Xác nhận và lưu.</li>
           </ol>
-          <p className="text-caption text-text-muted mt-2">
-            Nếu lỗi xác minh, gửi ảnh sao kê/màn hình app ngân hàng để đối chiếu.
-          </p>
+          <p className="text-caption text-text-muted mt-2">Nếu lỗi xác minh, gửi ảnh sao kê/màn hình app ngân hàng để đối chiếu.</p>
         </div>
 
         <div className="flex gap-sm">

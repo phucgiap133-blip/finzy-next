@@ -1,3 +1,5 @@
+"use client";
+
 import Header from "../../components/Header";
 import Button from "../../components/Button";
 import PageContainer from "../../components/PageContainer";
@@ -5,9 +7,8 @@ import PageContainer from "../../components/PageContainer";
 export default function CommunityPage() {
   return (
     <>
-     <Header title="Cộng đồng" showBack noLine backFallback="/" />
+      <Header title="Cộng đồng" showBack noLine backFallback="/" />
       <PageContainer className="space-y-md">
-       
         <div className="rounded-control border border-border shadow-sm bg-bg-card p-md">
           <div className="flex items-center gap-md">
             <div className="w-10 h-10 rounded-full bg-[color:#229ED9]" />

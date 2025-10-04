@@ -1,7 +1,26 @@
 "use client";
-import { createContext, useContext, useState, useCallback } from "react";
 
-const MenuCtx = createContext(null);
+import { createContext, useContext, useState, useCallback, ReactNode } from "react";
+
+type MenuContextType = {
+  // side menu
+  open: boolean;
+  openMenu: () => void;
+  closeMenu: () => void;
+  toggleMenu: () => void;
+  // account overlay
+  accountOpen: boolean;
+  openAccount: () => void;
+  closeAccount: () => void;
+  toggleAccount: () => void;
+  // logout overlay
+  logoutOpen: boolean;
+  openLogout: () => void;
+  closeLogout: () => void;
+  toggleLogout: () => void;
+};
+
+const MenuCtx = createContext<MenuContextType | null>(null);
 
 export function useMenu() {
   const ctx = useContext(MenuCtx);
@@ -9,32 +28,38 @@ export function useMenu() {
   return ctx;
 }
 
-export default function MenuProvider({ children }) {
+export default function MenuProvider({ children }: { children: ReactNode }) {
   // Drawer (SideMenu)
   const [open, setOpen] = useState(false);
-  const openMenu   = useCallback(() => setOpen(true), []);
-  const closeMenu  = useCallback(() => setOpen(false), []);
-  const toggleMenu = useCallback(() => setOpen(v => !v), []);
+  const openMenu = useCallback(() => setOpen(true), []);
+  const closeMenu = useCallback(() => setOpen(false), []);
+  const toggleMenu = useCallback(() => setOpen((v) => !v), []);
 
   // Account overlay
   const [accountOpen, setAccountOpen] = useState(false);
-  const openAccount  = useCallback(() => setAccountOpen(true), []);
+  const openAccount = useCallback(() => setAccountOpen(true), []);
   const closeAccount = useCallback(() => setAccountOpen(false), []);
-  const toggleAccount = useCallback(() => setAccountOpen(v => !v), []);
+  const toggleAccount = useCallback(() => setAccountOpen((v) => !v), []);
 
-  // ✅ Logout overlay
+  // Logout overlay
   const [logoutOpen, setLogoutOpen] = useState(false);
-  const openLogout  = useCallback(() => setLogoutOpen(true), []);
+  const openLogout = useCallback(() => setLogoutOpen(true), []);
   const closeLogout = useCallback(() => setLogoutOpen(false), []);
-  const toggleLogout = useCallback(() => setLogoutOpen(v => !v), []);
+  const toggleLogout = useCallback(() => setLogoutOpen((v) => !v), []);
 
-  const value = {
-    // side menu
-    open, openMenu, closeMenu, toggleMenu,
-    // account overlay
-    accountOpen, openAccount, closeAccount, toggleAccount,
-    // logout overlay
-    logoutOpen, openLogout, closeLogout, toggleLogout,
+  const value: MenuContextType = {
+    open,
+    openMenu,
+    closeMenu,
+    toggleMenu,
+    accountOpen,
+    openAccount,
+    closeAccount,
+    toggleAccount,
+    logoutOpen,
+    openLogout,
+    closeLogout,
+    toggleLogout,
   };
 
   return <MenuCtx.Provider value={value}>{children}</MenuCtx.Provider>;

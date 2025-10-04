@@ -10,13 +10,13 @@ import { api } from "@/lib/api";
 
 export default function BankAddPage() {
   const router = useRouter();
-  const [bankName, setBankName] = useState("MB Bank");
-  const [number, setNumber] = useState("");
-  const [holder, setHolder] = useState("");
-  const [msg, setMsg] = useState("");
-  const [busy, setBusy] = useState(false);
+  const [bankName, setBankName] = useState<string>("MB Bank");
+  const [number, setNumber] = useState<string>("");
+  const [holder, setHolder] = useState<string>("");
+  const [msg, setMsg] = useState<string>("");
+  const [busy, setBusy] = useState<boolean>(false);
 
-  const submit = async (e: React.FormEvent) => {
+  const submit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setMsg("");
     setBusy(true);
@@ -41,7 +41,7 @@ export default function BankAddPage() {
               <select
                 className="mt-xs w-full border border-border rounded-control px-md py-sm text-body bg-white"
                 value={bankName}
-                onChange={(e)=>setBankName(e.target.value)}
+                onChange={(e) => setBankName(e.target.value)}
               >
                 <option>MB Bank</option>
                 <option>Vietcombank</option>
@@ -55,7 +55,7 @@ export default function BankAddPage() {
               <input
                 className="mt-xs w-full border border-border rounded-control px-md py-sm text-body"
                 value={number}
-                onChange={(e)=>setNumber(e.target.value)}
+                onChange={(e) => setNumber(e.target.value)}
                 placeholder="00123456789"
                 required
               />
@@ -66,7 +66,7 @@ export default function BankAddPage() {
               <input
                 className="mt-xs w-full border border-border rounded-control px-md py-sm text-body"
                 value={holder}
-                onChange={(e)=>setHolder(e.target.value)}
+                onChange={(e) => setHolder(e.target.value)}
                 placeholder="Nguyễn Văn A"
                 required
               />
@@ -76,17 +76,17 @@ export default function BankAddPage() {
               <button
                 type="button"
                 className="px-md py-sm rounded-control border border-border"
-                onClick={()=>router.back()}
+                onClick={() => router.back()}
                 disabled={busy}
               >
                 Hủy
               </button>
-              <Button disabled={busy} type="submit">Liên kết</Button>
+              <Button disabled={busy} type="submit">
+                Liên kết
+              </Button>
             </div>
 
-            {msg && (
-              <div className="text-caption" style={{ color: "#C62828" }}>{msg}</div>
-            )}
+            {msg && <div className="text-caption" style={{ color: "#C62828" }}>{msg}</div>}
           </form>
         </Card>
       </PageContainer>

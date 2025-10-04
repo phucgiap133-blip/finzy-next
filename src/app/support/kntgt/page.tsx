@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 import Header from "../../../components/Header";
 import Button from "../../../components/Button";
@@ -16,9 +16,13 @@ export default function ReferralFAQPage() {
             Thưởng +10.000đ được cộng khi người được mời hoàn tất <b>lệnh rút đầu tiên thành công</b>.
           </p>
           <ul className="text-caption text-text-muted list-disc pl-5 mt-2 space-y-1">
-            <li>Đăng ký bằng <b>đúng link</b> của bạn.</li>
+            <li>
+              Đăng ký bằng <b>đúng link</b> của bạn.
+            </li>
             <li>Tài khoản mới, không trùng thiết bị/SDT/ngân hàng.</li>
-            <li>Lệnh <b>hủy/thất bại</b> không tính thưởng.</li>
+            <li>
+              Lệnh <b>hủy/thất bại</b> không tính thưởng.
+            </li>
           </ul>
         </div>
 

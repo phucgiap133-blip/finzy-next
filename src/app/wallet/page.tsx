@@ -3,6 +3,8 @@ import Card from "../../components/Card";
 import PageContainer from "../../components/PageContainer";
 import { api } from "@/lib/api";
 
+type WalletHistoryItem = { id: string; text: string; sub?: string };
+
 export default async function WalletPage() {
   const { wallet, history } = await api.wallet.get();
 
@@ -18,7 +20,7 @@ export default async function WalletPage() {
         </div>
 
         <div className="space-y-sm">
-          {history.map((it) => (
+          {(history as WalletHistoryItem[]).map((it) => (
             <Card key={it.id}>
               <div className="text-body font-medium">{it.text}</div>
               {it.sub && <div className="text-caption text-text-muted">{it.sub}</div>}

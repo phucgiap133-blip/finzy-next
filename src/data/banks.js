@@ -1,5 +1,4 @@
-// src/data/banks.js
-const BANKS = [
+const BANKS: string[] = [
   "Vietcombank (VCB)",
   "VietinBank (CTG)",
   "BIDV",
@@ -24,7 +23,7 @@ const BANKS = [
   "KienlongBank (KLB)",
   "Nam A Bank (NAB)",
   "Maritime Bank (MSB)",
-  "OceanBank (OCB)"
+  "OceanBank (OCB)",
 ];
 
 export default BANKS;

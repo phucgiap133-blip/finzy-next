@@ -17,7 +17,9 @@ export default function WithdrawSlowSupportPage() {
           <div className="text-caption text-text-muted mb-md">Nhập số tiền và thời gian thực hiện giao dịch.</div>
           <Input label="VD: 20.000đ" />
           <Input label="VD: 10:12 25/04/2025" />
-          <div className="mt-md"><Button>Gửi</Button></div>
+          <div className="mt-md">
+            <Button>Gửi</Button>
+          </div>
         </Card>
       </PageContainer>
     </>

@@ -1,22 +1,20 @@
-// src/components/RootClient.jsx
 "use client";
-import { useEffect, useCallback } from "react";
+
+import { useEffect, useCallback, ReactNode } from "react";
 import { usePathname } from "next/navigation";
 import MenuProvider, { useMenu } from "./MenuProvider";
 import SideMenu from "./SideMenu";
 import AccountOverlay from "./AccountOverlay";
-import LogoutOverlay from "./LogoutOverlay";   // ✅ THÊM DÒNG NÀY
+import LogoutOverlay from "./LogoutOverlay";
 
 function RouteAutoCloser() {
   const pathname = usePathname();
   const { closeAccount, closeMenu, openMenu } = useMenu();
 
   useEffect(() => {
-    // auto đóng overlay khi đổi route
     closeAccount();
     closeMenu();
 
-    // mở lại menu trên home nếu về từ back-from-menu
     if (typeof window !== "undefined" && sessionStorage.getItem("openMenuAfterNav") === "1") {
       sessionStorage.removeItem("openMenuAfterNav");
       openMenu?.();
@@ -26,7 +24,7 @@ function RouteAutoCloser() {
   return null;
 }
 
-export default function RootClient({ children }) {
+export default function RootClient({ children }: { children: ReactNode }) {
   const updateVar = useCallback(() => {
     const container = document.getElementById("app-container");
     const hero = document.getElementById("hero-card");
@@ -39,14 +37,16 @@ export default function RootClient({ children }) {
   useEffect(() => {
     updateVar();
     window.addEventListener("resize", updateVar);
-    return () => window.removeEventListener("resize", updateVar);
+    return () => {
+      window.removeEventListener("resize", updateVar);
+    };
   }, [updateVar]);
 
   return (
     <MenuProvider>
       <SideMenu />
       <AccountOverlay />
-      <LogoutOverlay />       {/* ✅ THÊM DÒNG NÀY */}
+      <LogoutOverlay />
       <RouteAutoCloser />
       {children}
     </MenuProvider>

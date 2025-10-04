@@ -9,23 +9,15 @@ export default function LogoutOverlay() {
   const { logoutOpen, closeLogout } = useMenu();
   if (!logoutOpen) return null;
 
-  // ESC để đóng
   useEffect(() => {
-    const onKey = (e) => e.key === "Escape" && closeLogout();
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && closeLogout();
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [closeLogout]);
 
   return (
     <>
-      {/* lớp tối */}
-      <div
-        onClick={closeLogout}
-        className="fixed inset-0 z-[70] bg-black/40"
-        aria-hidden
-      />
-
-      {/* panel nổi */}
+      <div onClick={closeLogout} className="fixed inset-0 z-[70] bg-black/40" aria-hidden />
       <section
         role="dialog"
         aria-modal="true"
@@ -40,11 +32,7 @@ export default function LogoutOverlay() {
         }}
       >
         <div className="flex justify-end px-md pt-md">
-          <button
-            onClick={closeLogout}
-            className="w-9 h-9 grid place-items-center rounded-control border border-border"
-            aria-label="Đóng"
-          >
+          <button onClick={closeLogout} className="w-9 h-9 grid place-items-center rounded-control border border-border" aria-label="Đóng">
             ×
           </button>
         </div>
@@ -52,19 +40,14 @@ export default function LogoutOverlay() {
         <PageContainer className="pb-lg">
           <div className="bg-bg-card rounded-control border border-border shadow-sm p-xl text-center space-y-md">
             <div className="text-h5 font-bold">Đăng xuất</div>
-            <p className="text-text-muted">
-              Bạn có chắc chắn muốn đăng xuất khỏi tài khoản này?
-            </p>
+            <p className="text-text-muted">Bạn có chắc chắn muốn đăng xuất khỏi tài khoản này?</p>
 
             <label className="inline-flex items-center gap-sm text-caption text-text-muted">
               <input type="checkbox" /> Đăng xuất khỏi thiết bị
             </label>
 
             <div className="flex justify-center gap-sm">
-              <button
-                className="px-md py-sm rounded-control border border-border"
-                onClick={closeLogout}
-              >
+              <button className="px-md py-sm rounded-control border border-border" onClick={closeLogout}>
                 Hủy
               </button>
               <Button>Đăng xuất</Button>

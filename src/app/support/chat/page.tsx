@@ -6,20 +6,23 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Header from "@/components/Header";
 import PageContainer from "@/components/PageContainer";
 
+type Sender = "agent" | "user" | "system";
+type ChatMsg = { id: string; from: Sender; text: string };
+
 const COMMANDS = [
   { cmd: "/rút tiền chậm", route: "/support/withdraw-slow", hint: "Nhập số tiền & thời gian giao dịch" },
-  { cmd: "/giới thiệu",     route: "/support/referral",     hint: "Không nhận được thưởng giới thiệu" },
-  { cmd: "/đổi mật khẩu",   route: "/password/change",      hint: "Đổi mật khẩu đăng nhập" },
-];
+  { cmd: "/giới thiệu", route: "/support/referral", hint: "Không nhận được thưởng giới thiệu" },
+  { cmd: "/đổi mật khẩu", route: "/password/change", hint: "Đổi mật khẩu đăng nhập" },
+] as const;
 
 export default function SupportChatPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const from = searchParams.get("from") || "/"; // nơi quay về khi bấm back
-  const [room] = useState("default");
-  const [input, setInput] = useState("");
-  const [loading, setLoading] = useState(true);
-  const [messages, setMessages] = useState([]);
+  const from = searchParams.get("from") || "/";
+  const [room] = useState<string>("default");
+  const [input, setInput] = useState<string>("");
+  const [loading, setLoading] = useState<boolean>(true);
+  const [messages, setMessages] = useState<ChatMsg[]>([]);
 
   useEffect(() => {
     let alive = true;
@@ -27,23 +30,25 @@ export default function SupportChatPage() {
       try {
         const res = await api(`/support/chat/history?room=${encodeURIComponent(room)}`);
         if (!alive) return;
-        setMessages(res?.messages || []);
+        setMessages((res?.messages as ChatMsg[]) || []);
       } catch (e) {
         console.error(e);
       } finally {
         if (alive) setLoading(false);
       }
     })();
-    return () => { alive = false; };
+    return () => {
+      alive = false;
+    };
   }, [room]);
 
   const showSuggestions = input.startsWith("/");
   const filtered = showSuggestions
-    ? COMMANDS.filter(c => c.cmd.toLowerCase().includes(input.toLowerCase()))
+    ? COMMANDS.filter((c) => c.cmd.toLowerCase().includes(input.toLowerCase()))
     : [];
 
-  const onPick = (c) => {
-    setMessages(m => [...m, { id: `u-${Date.now()}`, from: "user", text: c.cmd }]);
+  const onPick = (c: (typeof COMMANDS)[number]) => {
+    setMessages((m) => [...m, { id: `u-${Date.now()}`, from: "user", text: c.cmd }]);
     setInput("");
     router.push(c.route);
   };
@@ -52,16 +57,19 @@ export default function SupportChatPage() {
     const text = input.trim();
     if (!text) return;
 
-    const hit = COMMANDS.find(c => c.cmd.toLowerCase() === text.toLowerCase());
-    if (hit) { onPick(hit); return; }
+    const hit = COMMANDS.find((c) => c.cmd.toLowerCase() === text.toLowerCase());
+    if (hit) {
+      onPick(hit);
+      return;
+    }
 
-    setMessages(m => [...m, { id: `u-${Date.now()}`, from: "user", text }]);
+    setMessages((m) => [...m, { id: `u-${Date.now()}`, from: "user", text }]);
     setInput("");
 
     try {
       await api(`/support/chat/send`, { method: "POST", body: JSON.stringify({ room, text }) });
       const h = await api(`/support/chat/history?room=${encodeURIComponent(room)}`);
-      setMessages(h?.messages || []);
+      setMessages((h?.messages as ChatMsg[]) || []);
     } catch (e) {
       console.error(e);
     }
@@ -80,7 +88,11 @@ export default function SupportChatPage() {
             ) : (
               messages.map((m) => (
                 <div key={m.id} className={m.from === "agent" ? "text-left" : "text-right"}>
-                  <div className={`inline-block px-md py-sm rounded-control ${m.from === "agent" ? "bg-[color:#F5F5F5]" : "bg-brand-primary text-white"}`}>
+                  <div
+                    className={`inline-block px-md py-sm rounded-control ${
+                      m.from === "agent" ? "bg-[color:#F5F5F5]" : "bg-brand-primary text-white"
+                    }`}
+                  >
                     <span className="text-body">{m.text}</span>
                   </div>
                 </div>
@@ -99,13 +111,20 @@ export default function SupportChatPage() {
                 onKeyDown={(e) => e.key === "Enter" && send()}
               />
               {showSuggestions && (
-                <div className="absolute left-0 right-0 top-[calc(100%+8px)] z-20 rounded-[12px] border border-border bg-white shadow-md overflow-hidden" role="listbox">
+                <div
+                  className="absolute left-0 right-0 top-[calc(100%+8px)] z-20 rounded-[12px] border border-border bg-white shadow-md overflow-hidden"
+                  role="listbox"
+                >
                   <div className="max-h-[280px] overflow-y-auto">
                     {filtered.length === 0 ? (
                       <div className="px-md py-sm text-caption text-text-muted">Không có lệnh phù hợp</div>
                     ) : (
                       filtered.map((c) => (
-                        <button key={c.cmd} onClick={() => onPick(c)} className="w-full text-left px-md py-sm hover:bg-[color:#FAFAFA]">
+                        <button
+                          key={c.cmd}
+                          onClick={() => onPick(c)}
+                          className="w-full text-left px-md py-sm hover:bg-[color:#FAFAFA]"
+                        >
                           <div className="text-body font-medium">{c.cmd}</div>
                           <div className="text-caption text-text-muted">{c.hint}</div>
                         </button>

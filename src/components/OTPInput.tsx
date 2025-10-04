@@ -1,8 +1,16 @@
 "use client";
+
 import { useRef, useEffect } from "react";
 
-export default function OTPInput({ length = 4, value = "", onChange }) {
-  const refs = useRef([]);
+type Props = {
+  length?: number;
+  value?: string;
+  onChange?: (v: string) => void;
+};
+
+export default function OTPInput({ length = 4, value = "", onChange }: Props) {
+  const refs = useRef<Array<HTMLInputElement | null>>([]);
+
   useEffect(() => {
     refs.current = Array(length)
       .fill(null)
@@ -11,16 +19,16 @@ export default function OTPInput({ length = 4, value = "", onChange }) {
 
   const val = value.padEnd(length, " ").slice(0, length).split("");
 
-  const handle = (i, e) => {
+  const handle = (i: number, e: React.ChangeEvent<HTMLInputElement>) => {
     const ch = e.target.value.replace(/\D/g, "").slice(-1);
     const next = (value.slice(0, i) + ch + value.slice(i + 1)).slice(0, length);
     onChange?.(next);
-    if (ch && refs.current[i + 1]) refs.current[i + 1].focus();
+    if (ch && refs.current[i + 1]) refs.current[i + 1]?.focus();
   };
 
-  const onKey = (i, e) => {
+  const onKey = (i: number, e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Backspace" && !val[i] && refs.current[i - 1]) {
-      refs.current[i - 1].focus();
+      refs.current[i - 1]?.focus();
     }
   };
 

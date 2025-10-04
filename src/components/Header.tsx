@@ -1,7 +1,20 @@
 "use client";
 
-import { useRouter, usePathname, useSearchParams } from "next/navigation";
+import { ReactNode, useCallback } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useMenu } from "./MenuProvider";
+
+type Props = {
+  title?: string;
+  right?: ReactNode;
+  showBack?: boolean;
+  noLine?: boolean;
+  showClose?: boolean;
+  hideLeft?: boolean;
+  backFallback?: string;
+  forceFallback?: boolean;
+  closeTo?: string;
+};
 
 export default function Header({
   title = "",
@@ -13,21 +26,20 @@ export default function Header({
   backFallback = "/",
   forceFallback = false,
   closeTo,
-}) {
+}: Props) {
   const router = useRouter();
   const search = useSearchParams();
-  const { toggleMenu } = useMenu() || {};
+  const { toggleMenu } = useMenu();
 
   const fromMenu = search?.get("src") === "menu";
 
-  const doDefaultBack = () => {
+  const doDefaultBack = useCallback(() => {
     if (forceFallback) return router.push(backFallback);
     if (typeof window !== "undefined" && window.history.length > 1) router.back();
     else router.push(backFallback);
-  };
+  }, [backFallback, forceFallback, router]);
 
   const onBack = () => {
-    // Nếu đến trang này từ Menu → về home & mở Menu trên home
     if (fromMenu) {
       if (typeof window !== "undefined") {
         sessionStorage.setItem("openMenuAfterNav", "1");
@@ -44,15 +56,10 @@ export default function Header({
   };
 
   return (
-    <header
-      className={[
-        "sticky top-0 z-40 bg-bg-card/95 backdrop-blur",
-        noLine ? "" : "border-b border-border",
-      ].join(" ")}
-    >
+    <header className={["sticky top-0 z-40 bg-bg-card/95 backdrop-blur", noLine ? "" : "border-b border-border"].join(" ")}>
       <div className="mx-auto max-w-md flex items-center gap-sm p-md">
-        {!hideLeft && (
-          showBack ? (
+        {!hideLeft &&
+          (showBack ? (
             <button
               onClick={onBack}
               className="rounded-control px-sm py-xs border border-border text-text-muted"
@@ -68,8 +75,7 @@ export default function Header({
             >
               ≡
             </button>
-          )
-        )}
+          ))}
 
         <h1 className="text-h5 md:text-h4 font-bold">{title}</h1>
 

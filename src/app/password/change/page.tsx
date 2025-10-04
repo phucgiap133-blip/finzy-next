@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 import Header from "../../../components/Header";
 import Button from "../../../components/Button";
@@ -8,8 +8,8 @@ import { useState } from "react";
 import PageContainer from "../../../components/PageContainer";
 
 export default function ChangePasswordPage() {
-  const [current, setCurrent] = useState("");
-  const [nextPwd, setNextPwd] = useState("");
+  const [current, setCurrent] = useState<string>("");
+  const [nextPwd, setNextPwd] = useState<string>("");
 
   return (
     <>
@@ -23,8 +23,18 @@ export default function ChangePasswordPage() {
           </div>
 
           <div className="space-y-md">
-            <Input label="Mật khẩu hiện tại" type="password" value={current} onChange={(e) => setCurrent(e.target.value)} />
-            <Input label="Nhập lại mật khẩu mới" type="password" value={nextPwd} onChange={(e) => setNextPwd(e.target.value)} />
+            <Input
+              label="Mật khẩu hiện tại"
+              type="password"
+              value={current}
+              onChange={(e) => setCurrent((e.target as HTMLInputElement).value)}
+            />
+            <Input
+              label="Nhập lại mật khẩu mới"
+              type="password"
+              value={nextPwd}
+              onChange={(e) => setNextPwd((e.target as HTMLInputElement).value)}
+            />
           </div>
 
           <div className="mt-md">

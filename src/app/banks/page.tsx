@@ -16,11 +16,11 @@ type BankItem = {
 };
 
 export default function BanksPage() {
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState<boolean>(true);
   const [items, setItems] = useState<BankItem[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [confirmId, setConfirmId] = useState<string | null>(null);
-  const [msg, setMsg] = useState("");
+  const [msg, setMsg] = useState<string>("");
 
   const load = async () => {
     setLoading(true);
@@ -44,8 +44,7 @@ export default function BanksPage() {
   const confirmDelete = async () => {
     if (!confirmId) return;
     try {
-      // ✅ dùng đúng method bạn muốn
-      await api.banks.delete({ id: confirmId });
+      await api.banks.delete({ id: confirmId }); // method theo đúng cách bạn gọi
       setConfirmId(null);
       await load();
       setMsg("Đã xoá tài khoản ngân hàng.");
@@ -76,7 +75,7 @@ export default function BanksPage() {
             <div className="text-caption text-text-muted">Chưa có tài khoản ngân hàng.</div>
           ) : (
             <div className="space-y-md">
-              {items.map(item => {
+              {items.map((item) => {
                 const isDefault = selectedId === item.id;
                 return (
                   <div key={item.id} className="flex items-center justify-between">
@@ -129,7 +128,10 @@ export default function BanksPage() {
           </div>
 
           {msg && (
-            <div className="mt-sm text-caption" style={{ color: msg.startsWith("Lỗi") ? "#C62828" : "#2E7D32" }}>
+            <div
+              className="mt-sm text-caption"
+              style={{ color: msg.startsWith("Lỗi") ? "#C62828" : "#2E7D32" }}
+            >
               {msg}
             </div>
           )}
@@ -145,11 +147,11 @@ export default function BanksPage() {
               <div className="text-caption text-text-muted">
                 Bạn có chắc muốn xoá{" "}
                 <b>
-                  {
-                    items.find(i => i.id === confirmId)
-                      ? `${items.find(i => i.id === confirmId)!.bankName} *****${items.find(i => i.id === confirmId)!.last4}`
-                      : "tài khoản này"
-                  }
+                  {items.find((i) => i.id === confirmId)
+                    ? `${items.find((i) => i.id === confirmId)!.bankName} *****${
+                        items.find((i) => i.id === confirmId)!.last4
+                      }`
+                    : "tài khoản này"}
                 </b>
                 ?
               </div>

@@ -1,3 +1,5 @@
+"use client";
+
 import Header from "../../components/Header";
 import Button from "../../components/Button";
 import Link from "next/link";
@@ -6,8 +8,7 @@ import PageContainer from "../../components/PageContainer";
 export default function AccountPage() {
   return (
     <>
-     <Header title="" noLine showClose hideLeft closeTo="/" />
-
+      <Header title="" noLine showClose hideLeft closeTo="/" />
 
       <PageContainer className="space-y-md">
         <div className="bg-bg-card rounded-control p-lg shadow-md border border-border">

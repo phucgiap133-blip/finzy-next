@@ -1,3 +1,5 @@
+"use client";
+
 import Header from "../../components/Header";
 import Card from "../../components/Card";
 import Toggle from "../../components/Toggle";
@@ -9,7 +11,6 @@ export default function PolicyPage() {
     <>
       <Header title="Chính sách & Điều khoản" showBack noLine backFallback="/" />
       <PageContainer className="space-y-md">
-        {/* search + updated */}
         <div className="flex items-center gap-sm">
           <div className="flex-1 rounded-control border border-border bg-bg-card p-sm text-caption text-text-muted">
             Tìm kiếm
@@ -49,9 +50,7 @@ export default function PolicyPage() {
           </div>
 
           <div className="mt-md flex gap-sm">
-            <button className="px-md py-sm rounded-control border border-border flex-1 text-body">
-              Hủy
-            </button>
+            <button className="px-md py-sm rounded-control border border-border flex-1 text-body">Hủy</button>
             <div className="flex-1">
               <Button>Đăng xuất</Button>
             </div>

@@ -1,3 +1,4 @@
+// src/lib/api.ts
 /* ========================= Types ========================= */
 export type Currency = "VND";
 export type WithdrawStatus = "pending" | "success" | "failed";
@@ -8,14 +9,18 @@ export interface WalletResponse { wallet: Wallet; history: WalletHistoryItem[]; 
 
 export interface WithdrawRequest { amount: number; methodId: string; }
 export interface WithdrawResponse {
-  id: string; amount: number; fee: number; status: WithdrawStatus; createdAt: string;
+  id: string;
+  amount: number;
+  fee: number;
+  status: WithdrawStatus;
+  createdAt: string;
 }
 
 export type SupportTopic = "withdraw-slow" | "referral" | "other";
-export interface SupportTicketRequest { topic: SupportTopic; message: string; meta?: Record<string, any>; }
+export interface SupportTicketRequest { topic: SupportTopic; message: string; meta?: Record<string, unknown>; }
 export interface SupportTicketResponse { ticketId: string; status: "received"; createdAt: string; }
 
-/* ===== New: history (withdrawals/commissions) & banks ===== */
+/* ===== History (withdrawals/commissions) & banks ===== */
 export interface WithdrawalHistoryItem {
   id: string;
   amount: number;              // âm
@@ -52,11 +57,11 @@ export interface BankSelectRequest { id: string; }
 export interface BankLinkRequest { bankName: string; number: string; holder: string; }
 export interface BankLinkResponse { id: string; }
 
-/* ===== NEW: Delete bank (theo cách bạn gọi api.banks.delete({ id })) ===== */
+/* Delete bank (đúng với cách bạn gọi api.banks.delete({ id })) */
 export interface BankDeleteRequest { id: string; }
 export interface BankDeleteResponse { ok: true; }
 
-/* ===== NEW: Chat types ===== */
+/* ===== Chat types ===== */
 export type ChatSender = "agent" | "user" | "system";
 export interface ChatMessage {
   id: string;
@@ -80,8 +85,8 @@ export interface ChatSendResponse {
 /* ===================== Env & helpers ===================== */
 const USE_MOCK = process.env.NEXT_PUBLIC_USE_MOCK === "1";
 const BASE_URL = (process.env.NEXT_PUBLIC_API_URL || "https://api.example.com").replace(/\/+$/, "");
-const delay = (ms:number)=>new Promise(r=>setTimeout(r,ms));
-const uid = (p="") => p + Math.random().toString(36).slice(2,8) + Date.now().toString(36).slice(-4);
+const delay = (ms: number) => new Promise((r) => setTimeout(r, ms));
+const uid = (p = "") => p + Math.random().toString(36).slice(2, 8) + Date.now().toString(36).slice(-4);
 
 /* =================== HTTP (typed) ==================== */
 async function get<T>(path: string): Promise<T> {
@@ -91,84 +96,81 @@ async function get<T>(path: string): Promise<T> {
   return (await res.json()) as T;
 }
 
-async function post<Req,Res>(path:string, body:Req):Promise<Res>{
+async function post<Req, Res>(path: string, body: Req): Promise<Res> {
   if (USE_MOCK) return (await mockPost(path, body)) as Res;
   const res = await fetch(`${BASE_URL}${path}`, {
-    method:"POST",
-    headers:{ "Content-Type":"application/json" },
-    credentials:"include",
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
     body: JSON.stringify(body),
   });
-  if (!res.ok) throw new Error(`POST ${path} ${res.status} ${await res.text().catch(()=> "")}`);
+  if (!res.ok) throw new Error(`POST ${path} ${res.status} ${await res.text().catch(() => "")}`);
   return (await res.json()) as Res;
 }
 
-/* ===== NEW: tiện ích gọi “tự do” nếu bạn muốn ===== */
-export async function apiFetch<T=any>(
+/* ===== tiện ích gọi “tự do” nếu bạn muốn ===== */
+export async function apiFetch<T = unknown>(
   path: string,
-  init?: (RequestInit & { json?: any }) | undefined
+  init?: (RequestInit & { json?: unknown }) | undefined
 ): Promise<T> {
   if (USE_MOCK) {
     const method = (init?.method || "GET").toUpperCase();
     if (method === "GET") return (await mockGet(path)) as T;
-    const body = init?.json ?? (typeof init?.body === "string" ? JSON.parse(init!.body as string) : undefined);
+    const body =
+      init?.json ?? (typeof init?.body === "string" ? JSON.parse(init!.body as string) : undefined);
     return (await mockPost(path, body)) as T;
   }
   const url = `${BASE_URL}${path}`;
-  const headers: Record<string,string> = { ...(init?.headers as Record<string,string>), };
+  const headers: Record<string, string> = { ...(init?.headers as Record<string, string>) };
   let body: BodyInit | undefined = init?.body as any;
   if (init?.json !== undefined) {
     headers["Content-Type"] = "application/json";
     body = JSON.stringify(init.json);
   }
-  const res = await fetch(url, { ...init, headers, body, credentials:"include" });
+  const res = await fetch(url, { ...init, headers, body, credentials: "include" });
   if (!res.ok) throw new Error(`${init?.method || "GET"} ${path} ${res.status}`);
   return (await res.json()) as T;
 }
 
 /* ===================== Public API (typed) ======================== */
-async function getWallet(){ return await get<WalletResponse>("/wallet"); }              // A
-async function createWithdraw(payload:WithdrawRequest){
-  return await post<WithdrawRequest,WithdrawResponse>("/withdraw", payload);            // B
+async function getWallet() {
+  return await get<WalletResponse>("/wallet");
 }
-async function createSupportTicket(payload:SupportTicketRequest){
-  return await post<SupportTicketRequest,SupportTicketResponse>("/support/ticket",payload); // C
+async function createWithdraw(payload: WithdrawRequest) {
+  return await post<WithdrawRequest, WithdrawResponse>("/withdraw", payload);
+}
+async function createSupportTicket(payload: SupportTicketRequest) {
+  return await post<SupportTicketRequest, SupportTicketResponse>("/support/ticket", payload);
 }
 
-/* NEW: history & banks */
-async function getWithdrawals(){ return await get<WithdrawalsResponse>("/withdrawals"); }
-async function getCommissions(){  return await get<CommissionsResponse>("/commissions"); }
-async function getBanks(){        return await get<BanksResponse>("/banks"); }
-async function selectBank(payload:BankSelectRequest){
-  return await post<BankSelectRequest, { ok:true }>("/banks/select", payload);
+/* history & banks */
+async function getWithdrawals() { return await get<WithdrawalsResponse>("/withdrawals"); }
+async function getCommissions()  { return await get<CommissionsResponse>("/commissions"); }
+async function getBanks()        { return await get<BanksResponse>("/banks"); }
+async function selectBank(payload: BankSelectRequest) {
+  return await post<BankSelectRequest, { ok: true }>("/banks/select", payload);
 }
-async function linkBank(payload:BankLinkRequest){
-  return await post<BankLinkRequest,BankLinkResponse>("/banks/link", payload);
+async function linkBank(payload: BankLinkRequest) {
+  return await post<BankLinkRequest, BankLinkResponse>("/banks/link", payload);
 }
-/* NEW: delete bank (đúng với cách bạn đang dùng) */
-async function deleteBank(payload:BankDeleteRequest){
-  // Mock: /banks/delete ; Backend thật nếu khác (DELETE /banks/:id) thì báo mình map lại.
+async function deleteBank(payload: BankDeleteRequest) {
   return await post<BankDeleteRequest, BankDeleteResponse>("/banks/delete", payload);
 }
 
-/* ===== NEW: Chat API (typed) ===== */
-async function chatHistory(room:string){
+/* Chat API */
+async function chatHistory(room: string) {
   return await get<ChatHistoryResponse>(`/support/chat/history?room=${encodeURIComponent(room)}`);
 }
-async function chatSend(payload:ChatSendRequest){
-  return await post<ChatSendRequest,ChatSendResponse>(`/support/chat/send`, payload);
+async function chatSend(payload: ChatSendRequest) {
+  return await post<ChatSendRequest, ChatSendResponse>(`/support/chat/send`, payload);
 }
 
 export const api = {
   wallet:   { get: getWallet },
   withdraw: { create: createWithdraw },
   support:  { createTicket: createSupportTicket, chat: { history: chatHistory, send: chatSend } },
-  history:  {
-    withdrawals: { get: getWithdrawals },
-    commissions: { get: getCommissions },
-  },
-  banks:    { get: getBanks, select: selectBank, link: linkBank, delete: deleteBank }, // ← thêm delete
-  // raw fetch nếu bạn muốn gọi tự do:
+  history:  { withdrawals: { get: getWithdrawals }, commissions: { get: getCommissions } },
+  banks:    { get: getBanks, select: selectBank, link: linkBank, delete: deleteBank },
   fetch: apiFetch,
 };
 
@@ -180,28 +182,28 @@ type MockDB = {
   tickets: SupportTicketResponse[];
   withdrawalItems: WithdrawalHistoryItem[];
   commissionItems: CommissionItem[];
-  banks: { accounts: BankAccount[]; selectedId: string | null; };
+  banks: { accounts: BankAccount[]; selectedId: string | null };
   chats: Record<string, ChatMessage[]>;
 };
 
 const mockDB: MockDB = {
   wallet: { balance: 37000, currency: "VND" },
   history: [
-    { id: uid("h_"), text: "Đã cộng +10.000đ", sub: "cho bạn và người B", createdAt: new Date(Date.now()-36e5).toISOString() },
-    { id: uid("h_"), text: "Đã cộng +10.000đ", sub: "cho bạn và người B", createdAt: new Date(Date.now()-72e5).toISOString() },
-    { id: uid("h_"), text: "Đã cộng +10.000đ", sub: "cho bạn và người B", createdAt: new Date(Date.now()-108e5).toISOString() },
+    { id: uid("h_"), text: "Đã cộng +10.000đ", sub: "cho bạn và người B", createdAt: new Date(Date.now() - 36e5).toISOString() },
+    { id: uid("h_"), text: "Đã cộng +10.000đ", sub: "cho bạn và người B", createdAt: new Date(Date.now() - 72e5).toISOString() },
+    { id: uid("h_"), text: "Đã cộng +10.000đ", sub: "cho bạn và người B", createdAt: new Date(Date.now() - 108e5).toISOString() },
   ],
   withdrawals: [],
   tickets: [],
   withdrawalItems: [
     { id: uid("wr_"), amount: -100000, status: "Thành công",  fee: 0, method: "MoMo *****5678",    createdAt: "2025-08-17T10:21:00.000Z" },
     { id: uid("wr_"), amount: -100000, status: "Thành công",  fee: 0, method: "MoMo *****5678",    createdAt: "2025-08-17T09:59:00.000Z" },
-    { id: uid("wr_"), amount: -100000, status: "Đang xử lý", fee: 0, method: "MB Bank *****1234", createdAt: "2025-09-12T09:02:00.000Z" },
+    { id: uid("wr_"), amount: -100000, status: "Đang xử lý",  fee: 0, method: "MB Bank *****1234", createdAt: "2025-09-12T09:02:00.000Z" },
   ],
   commissionItems: [
-    { id: uid("cm_"), amount: 10000, status: "Đang xử lý", createdAt: new Date(Date.now()-86400000).toISOString() },
-    { id: uid("cm_"), amount: 10000, status: "Thành công", createdAt: new Date(Date.now()-2*86400000).toISOString() },
-    { id: uid("cm_"), amount: 10000, status: "Thất bại",   createdAt: new Date(Date.now()-3*86400000).toISOString() },
+    { id: uid("cm_"), amount: 10000, status: "Đang xử lý", createdAt: new Date(Date.now() - 86400000).toISOString() },
+    { id: uid("cm_"), amount: 10000, status: "Thành công", createdAt: new Date(Date.now() - 2 * 86400000).toISOString() },
+    { id: uid("cm_"), amount: 10000, status: "Thất bại",   createdAt: new Date(Date.now() - 3 * 86400000).toISOString() },
   ],
   banks: {
     accounts: [
@@ -217,31 +219,28 @@ const mockDB: MockDB = {
   },
 };
 
-const tone = (status:string) =>
-  status === "Thành công" ? "success" : status === "Đang xử lý" ? "warning" : "danger";
-
 /* --------- Mock GET ---------- */
-async function mockGet(path:string){
+async function mockGet(path: string) {
   await delay(200);
 
-  if (path === "/wallet"){
-    const res: WalletResponse = { wallet: mockDB.wallet, history: mockDB.history.slice(0,20) };
+  if (path === "/wallet") {
+    const res: WalletResponse = { wallet: mockDB.wallet, history: mockDB.history.slice(0, 20) };
     return res;
   }
 
-  if (path === "/withdrawals"){
-    const res: WithdrawalsResponse = { items: mockDB.withdrawalItems.map(i => ({ ...i })) };
+  if (path === "/withdrawals") {
+    const res: WithdrawalsResponse = { items: mockDB.withdrawalItems.map((i) => ({ ...i })) };
     return res;
   }
 
-  if (path === "/commissions"){
-    const res: CommissionsResponse = { items: mockDB.commissionItems.map(i => ({ ...i })) };
+  if (path === "/commissions") {
+    const res: CommissionsResponse = { items: mockDB.commissionItems.map((i) => ({ ...i })) };
     return res;
   }
 
-  if (path === "/banks"){
+  if (path === "/banks") {
     const res: BanksResponse = {
-      accounts: mockDB.banks.accounts.map(a => ({ ...a })),
+      accounts: mockDB.banks.accounts.map((a) => ({ ...a })),
       selectedId: mockDB.banks.selectedId ?? mockDB.banks.accounts[0]?.id ?? null,
     };
     return res;
@@ -251,7 +250,7 @@ async function mockGet(path:string){
     const url = new URL(`http://x${path}`); // trick parse query
     const room = url.searchParams.get("room") || "default";
     const messages = mockDB.chats[room] || (mockDB.chats[room] = []);
-    const res: ChatHistoryResponse = { room, messages: messages.map(m => ({ ...m })) };
+    const res: ChatHistoryResponse = { room, messages: messages.map((m) => ({ ...m })) };
     return res;
   }
 
@@ -259,10 +258,10 @@ async function mockGet(path:string){
 }
 
 /* --------- Mock POST --------- */
-async function mockPost(path:string, body:any){
+async function mockPost(path: string, body: any) {
   await delay(350);
 
-  if (path === "/withdraw"){
+  if (path === "/withdraw") {
     const req = body as WithdrawRequest;
     const MIN = 20000, FEE = 0;
 
@@ -273,11 +272,17 @@ async function mockPost(path:string, body:any){
     mockDB.wallet.balance -= req.amount + FEE;
 
     const withd: WithdrawResponse = {
-      id: uid("w_"), amount: req.amount, fee: FEE, status: "success", createdAt: new Date().toISOString(),
+      id: uid("w_"),
+      amount: req.amount,
+      fee: FEE,
+      status: "success",
+      createdAt: new Date().toISOString(),
     };
     mockDB.withdrawals.unshift(withd);
     mockDB.history.unshift({
-      id: uid("h_"), text: `Đã rút -${req.amount.toLocaleString()}đ`, createdAt: new Date().toISOString(),
+      id: uid("h_"),
+      text: `Đã rút -${req.amount.toLocaleString()}đ`,
+      createdAt: new Date().toISOString(),
     });
 
     mockDB.withdrawalItems.unshift({
@@ -292,21 +297,25 @@ async function mockPost(path:string, body:any){
     return withd;
   }
 
-  if (path === "/support/ticket"){
-    const ticket: SupportTicketResponse = { ticketId: uid("t_"), status: "received", createdAt: new Date().toISOString() };
+  if (path === "/support/ticket") {
+    const ticket: SupportTicketResponse = {
+      ticketId: uid("t_"),
+      status: "received",
+      createdAt: new Date().toISOString(),
+    };
     mockDB.tickets.unshift(ticket);
     return ticket;
   }
 
-  if (path === "/banks/select"){
+  if (path === "/banks/select") {
     const { id } = body as BankSelectRequest;
-    const exists = mockDB.banks.accounts.some(a => a.id === id);
+    const exists = mockDB.banks.accounts.some((a) => a.id === id);
     if (!exists) throw new Error("Tài khoản không tồn tại");
     mockDB.banks.selectedId = id;
     return { ok: true };
   }
 
-  if (path === "/banks/link"){
+  if (path === "/banks/link") {
     const req = body as BankLinkRequest;
     if (!req.bankName || !req.number || !req.holder) throw new Error("Thiếu thông tin");
     const id = uid("bk_");
@@ -321,10 +330,9 @@ async function mockPost(path:string, body:any){
     return { id };
   }
 
-  /* ===== NEW: /banks/delete ===== */
-  if (path === "/banks/delete"){
+  if (path === "/banks/delete") {
     const { id } = body as BankDeleteRequest;
-    const idx = mockDB.banks.accounts.findIndex(a => a.id === id);
+    const idx = mockDB.banks.accounts.findIndex((a) => a.id === id);
     if (idx === -1) throw new Error("Tài khoản không tồn tại");
 
     const deletingSelected = mockDB.banks.selectedId === id;

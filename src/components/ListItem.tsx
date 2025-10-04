@@ -1,4 +1,17 @@
 import Link from "next/link";
+import { ReactNode } from "react";
+
+type Props = {
+  href?: string;
+  title: ReactNode;
+  subtitle?: ReactNode;
+  right?: ReactNode;
+  icon?: ReactNode;
+  active?: boolean;
+  className?: string;
+  titleClassName?: string;
+  subtitleClassName?: string;
+};
 
 export default function ListItem({
   href,
@@ -10,7 +23,7 @@ export default function ListItem({
   className = "",
   titleClassName = "",
   subtitleClassName = "",
-}) {
+}: Props) {
   const body = (
     <div
       className={[
@@ -22,23 +35,11 @@ export default function ListItem({
       {icon && <span className="shrink-0">{icon}</span>}
 
       <div className="min-w-0">
-        {/* Tiêu đề dùng text-body để đồng bộ */}
-        <div className={["truncate text-body font-medium", titleClassName].join(" ")}>
-          {title}
-        </div>
-
-        {/* Phụ đề dùng caption theo token (không dùng text-sm) */}
-        {subtitle && (
-          <div className={["truncate text-caption text-text-muted", subtitleClassName].join(" ")}>
-            {subtitle}
-          </div>
-        )}
+        <div className={["truncate text-body font-medium", titleClassName].join(" ")}>{title}</div>
+        {subtitle && <div className={["truncate text-caption text-text-muted", subtitleClassName].join(" ")}>{subtitle}</div>}
       </div>
 
-      {/* Mũi tên/phần bên phải */}
-      <div className="ml-auto flex items-center gap-sm shrink-0">
-        {right ?? <span className="text-caption text-text-muted">›</span>}
-      </div>
+      <div className="ml-auto flex items-center gap-sm shrink-0">{right ?? <span className="text-caption text-text-muted">›</span>}</div>
     </div>
   );
 

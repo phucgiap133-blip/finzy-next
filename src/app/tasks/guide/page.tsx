@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 import Link from "next/link";
 import Header from "../../../components/Header";
@@ -6,14 +6,17 @@ import Button from "../../../components/Button";
 import Card from "../../../components/Card";
 import PageContainer from "../../../components/PageContainer";
 
-export default function TaskGuidePage({ searchParams }) {
+type GuideProps = {
+  searchParams?: Record<string, string | string[] | undefined>;
+};
+
+export default function TaskGuidePage({ searchParams }: GuideProps) {
   const showVideo = searchParams?.video === "1";
 
   return (
     <>
-     <Header title="Nhiệm vụ" showBack noLine backFallback="/" />
+      <Header title="Nhiệm vụ" showBack noLine backFallback="/" />
       <PageContainer className="space-y-md">
-        {/* Thanh tiêu đề nhỏ trong trang */}
         <div className="flex items-center justify-between">
           <div className="text-body font-medium">Hướng dẫn</div>
           {!showVideo ? (
@@ -25,7 +28,6 @@ export default function TaskGuidePage({ searchParams }) {
           )}
         </div>
 
-        {/* Video chỉ hiện khi ?video=1 */}
         {showVideo && (
           <div className="rounded-[14px] border border-border bg-white p-md">
             <div className="aspect-[16/9] rounded-[12px] bg-[color:#F3F4F6] grid place-items-center">
@@ -45,7 +47,9 @@ export default function TaskGuidePage({ searchParams }) {
             <div className="space-y-sm">
               <div className="flex items-start gap-sm">
                 <span className="mt-[2px]">🔁</span>
-                <div><div className="text-body font-medium">Bước 1</div></div>
+                <div>
+                  <div className="text-body font-medium">Bước 1</div>
+                </div>
               </div>
               <div className="flex items-start gap-sm">
                 <span className="mt-[2px]">✅</span>
@@ -73,9 +77,7 @@ export default function TaskGuidePage({ searchParams }) {
                 <label htmlFor="hideVideo">Đừng hiển video lần sau</label>
               </div>
             ) : (
-              <div className="text-center text-caption text-text-muted">
-                Đã ẩn video hướng dẫn • Hoàn tác
-              </div>
+              <div className="text-center text-caption text-text-muted">Đã ẩn video hướng dẫn • Hoàn tác</div>
             )}
           </div>
         </Card>
