@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 import * as bcrypt from "bcryptjs";
 import { prisma } from "@/server/prisma";
 import { ApiError, readJsonAndValidate } from "@/lib/utils";
-import { PasswordChangeSchema } from "@/schemas/auth";
+import { PasswordChangeSchema } from "@/lib/validations/auth";
 import { assertAuth } from "@/lib/auth-middleware";
 
 export async function POST(req: Request) {

@@ -60,8 +60,8 @@ export default function AdminChatDetailPage({ params }: { params: { ticketId: st
     const fetchChatDetails = useCallback(async () => {
         setChatState(prev => ({ ...prev, loading: true, error: null }));
         try {
-            // Gọi API Admin GET /api/admin/support/chat?ticketId=...
-            const res = await fetch(`/api/admin/support/chat?ticketId=${ticketId}`);
+            // ĐÃ SỬA: Gọi API Admin GET /api/admin/support/chat/history?ticketId=...
+            const res = await fetch(`/api/admin/support/chat/history?ticketId=${ticketId}`);
             const data = await res.json();
 
             if (!res.ok) {
@@ -102,8 +102,8 @@ export default function AdminChatDetailPage({ params }: { params: { ticketId: st
 
         setIsSending(true);
         try {
-            // Gọi API Admin POST /api/admin/support/send
-            const res = await fetch('/api/admin/support/send', {
+            // ĐÃ SỬA: Gọi API Admin POST /api/admin/support/chat/send
+            const res = await fetch('/api/admin/support/chat/send', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ ticketId, content: replyContent }),
@@ -147,7 +147,7 @@ export default function AdminChatDetailPage({ params }: { params: { ticketId: st
 
         setIsClosing(true);
         try {
-            // Gọi API Admin POST /api/admin/support/close
+            // GIỮ NGUYÊN: Gọi API Admin POST /api/admin/support/close
             const res = await fetch('/api/admin/support/close', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -186,7 +186,7 @@ export default function AdminChatDetailPage({ params }: { params: { ticketId: st
     const { ticket, messages } = chatState;
     // Dù đã kiểm tra ở trên, vẫn check lại cho Type safety
     if (!ticket) { 
-         return <div className="text-red-600 bg-red-100 p-4 rounded-lg">Lỗi: Không tìm thấy thông tin ticket.</div>;
+          return <div className="text-red-600 bg-red-100 p-4 rounded-lg">Lỗi: Không tìm thấy thông tin ticket.</div>;
     }
     
     const isClosed = ticket.status === 'CLOSED';

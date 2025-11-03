@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/server/prisma";
 import { generate6Digits, minutesFromNow, hashOtp, ApiError, readJsonAndValidate } from "@/lib/utils";
 import { rateLimit } from "@/lib/ratelimit";
-import { ForgotSendOtpSchema } from "@/schemas/auth";
+import { PasswordChangeSchema } from "@/lib/validations/auth";
 import { sendMail, buildOTPEmail } from "@/lib/mailer";
 
 const SEND_LIMIT = 5;

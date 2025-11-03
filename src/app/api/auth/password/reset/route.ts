@@ -3,7 +3,7 @@ import { prisma } from "@/server/prisma";
 import bcrypt from "bcryptjs";
 import { readJsonAndValidate, ApiError } from "@/lib/utils";
 import { rateLimit } from "@/lib/ratelimit";
-import { PasswordResetSchema } from "@/schemas/auth";
+import { PasswordChangeSchema } from "@/lib/validations/auth";
 
 const RESET_LIMIT = 5;
 const RESET_WINDOW_MS = 10 * 60_000;

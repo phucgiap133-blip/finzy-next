@@ -3,7 +3,7 @@ import { prisma } from "@/server/prisma";
 import { readJsonAndValidate, ApiError } from "@/lib/utils";
 import { getUserId } from "@/server/auth";
 import { logAudit } from "@/server/audit"; 
-import { BankIdSchema, BankIdRequest } from "@/schemas/bank";
+import { BankIdSchema, BankIdRequest } from "@/lib/validations/bank";
 
 /**
  * API POST: Xóa một tài khoản ngân hàng.

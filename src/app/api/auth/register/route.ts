@@ -4,7 +4,7 @@ import bcrypt from "bcryptjs";
 // ✅ SỬA: Thêm handleApiError vào import
 import { readJsonAndValidate, ApiError, handleApiError } from "@/lib/utils"; 
 import { rateLimitGuard, SENSITIVE_RATE_LIMIT } from "@/lib/ratelimit"; 
-import { RegisterSchema } from "@/schemas/auth"; 
+import { PasswordChangeSchema } from "@/lib/validations/auth";
 
 /**
  * API POST: Đăng ký tài khoản người dùng mới.
