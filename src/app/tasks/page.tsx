@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useRef, useState, useEffect, useCallback } from "react";
+import { useMemo, useState, useCallback, useRef, useEffect } from "react";
 import Link from "next/link";
 import Header from "../../components/Header";
 import Card from "../../components/Card";
@@ -19,7 +19,7 @@ const TAB_PAGES: { key: TabKey; label: string }[][] = [
   [
     { key: "nc", label: "NC" },
     { key: "qc", label: "QC" },
-    { key: "seo", label: "Seo" },
+    { key: "seo", label: "Seo" }, // ⬅️ trùng key với trang 1, nhưng giờ không sao
   ],
 ];
 
@@ -43,89 +43,110 @@ export default function TasksPage() {
   const currentTabs = TAB_PAGES[pageIdx];
   const list = useMemo(() => TASKS[tabKey] ?? [], [tabKey]);
 
-  const setPageAndResetTab = useCallback((newPageIdx: number) => {
-    setPageIdx(newPageIdx);
-    setTabKey(TAB_PAGES[newPageIdx][0].key);
-  }, []);
+  // Gộp toàn bộ tab (6 cái)
+  const ALL_TABS = useMemo(() => [...TAB_PAGES[0], ...TAB_PAGES[1]], []);
+
+  // ❗ activeIndex KHÔNG dùng key nữa, mà là vị trí: page*3 + vị trí trong trang
+  const activeIndex = useMemo(() => {
+    const local = TAB_PAGES[pageIdx].findIndex(t => t.key === tabKey);
+    return pageIdx * 3 + (local >= 0 ? local : 0);
+  }, [pageIdx, tabKey]);
+
+  const indexToKey = useCallback(
+    (i: number) => (ALL_TABS[i]?.key ?? ALL_TABS[0].key) as TabKey,
+    [ALL_TABS]
+  );
 
   const gotoNextPage = useCallback(() => {
-    setPageAndResetTab((pageIdx + 1) % TAB_PAGES.length);
-  }, [pageIdx, setPageAndResetTab]);
+    const newPage = (pageIdx + 1) % TAB_PAGES.length;
+    setPageIdx(newPage);
+    setTabKey(TAB_PAGES[newPage][0].key);
+  }, [pageIdx]);
 
   const gotoPrevPage = useCallback(() => {
-    setPageAndResetTab((pageIdx - 1 + TAB_PAGES.length) % TAB_PAGES.length);
-  }, [pageIdx, setPageAndResetTab]);
+    setPageIdx(0);
+    setTabKey("click");
+  }, []);
 
-  const tabsWrapRef = useRef<HTMLDivElement | null>(null);
-  const [dragX, setDragX] = useState<number>(0);
-  const [dragging, setDragging] = useState<boolean>(false);
-  const THRESHOLD = 60;
+  // Vuốt tuần tự 1→2→3→... và ngược lại
+  const setIndex = useCallback(
+    (nextIndex: number) => {
+      const clamped = Math.min(Math.max(0, nextIndex), ALL_TABS.length - 1);
+      if (clamped === activeIndex) return;
 
+      const nextKey = indexToKey(clamped);
+      setTabKey(nextKey);
+
+      const newPage = Math.floor(clamped / 3);
+      if (newPage !== pageIdx) setPageIdx(newPage);
+    },
+    [activeIndex, indexToKey, pageIdx, ALL_TABS.length]
+  );
+
+  // Gesture Pointer Events (phải→trái = next, trái→phải = prev)
+  const swipeRef = useRef<HTMLDivElement | null>(null);
   useEffect(() => {
-    const el = tabsWrapRef.current;
+    const el = swipeRef.current;
     if (!el) return;
+    let startX = 0, startY = 0;
+    let down = false;
+    let axis: "x" | "y" | null = null;
+    const AXIS_LOCK = 8;
+    const SNAP_RATIO = 0.25;
+    const MIN_PX = 18;
 
-    let startX = 0;
-    let isDown = false;
-
-    const start = (x: number) => {
-      isDown = true;
-      setDragging(true);
-      startX = x;
-    };
-    const move = (x: number) => {
-      if (!isDown) return;
-      setDragX(x - startX);
+    const start = (x: number, y: number) => { down = true; axis = null; startX = x; startY = y; };
+    const move  = (x: number, y: number) => {
+      if (!down) return;
+      const dx = x - startX, dy = y - startY;
+      if (!axis) {
+        if (Math.abs(dx) > AXIS_LOCK) axis = "x";
+        else if (Math.abs(dy) > AXIS_LOCK) axis = "y";
+      }
+      if (axis === "y") return;
     };
     const end = (x: number) => {
-      if (!isDown) return;
-      isDown = false;
+      if (!down) return; down = false;
       const dx = x - startX;
+      if (Math.abs(dx) < MIN_PX) return;
 
-      if (dx <= -THRESHOLD) {
-        setDragX(-80);
-        gotoNextPage();
-      } else if (dx >= THRESHOLD) {
-        setDragX(80);
-        gotoPrevPage();
-      }
-      requestAnimationFrame(() => {
-        setDragging(false);
-        setDragX(0);
-      });
+      const viewport = el.parentElement as HTMLElement | null;
+      const width = viewport?.clientWidth || el.clientWidth || 1;
+      const progress = dx / width;
+
+      // Chuẩn hoá: phải→trái = next ; trái→phải = prev
+      if (progress <= -SNAP_RATIO) setIndex(activeIndex + 1);
+      else if (progress >= SNAP_RATIO) setIndex(activeIndex - 1);
     };
 
-    const onTouchStart = (e: TouchEvent) => start(e.touches[0].clientX);
-    const onTouchMove = (e: TouchEvent) => move(e.touches[0].clientX);
-    const onTouchEnd = (e: TouchEvent) => end(e.changedTouches[0].clientX);
+    const onPointerDown = (e: PointerEvent) => {
+      if (e.button !== 0) return;
+      (e.currentTarget as Element).setPointerCapture?.(e.pointerId);
+      start(e.clientX, e.clientY);
+    };
+    const onPointerMove = (e: PointerEvent) => move(e.clientX, e.clientY);
+    const onPointerUp   = (e: PointerEvent) => {
+      (e.currentTarget as Element).releasePointerCapture?.(e.pointerId);
+      end(e.clientX);
+    };
 
-    const onMouseDown = (e: MouseEvent) => start(e.clientX);
-    const onMouseMove = (e: MouseEvent) => move(e.clientX);
-    const onMouseUp = (e: MouseEvent) => end(e.clientX);
-
-    el.addEventListener("touchstart", onTouchStart, { passive: true });
-    el.addEventListener("touchmove", onTouchMove, { passive: true });
-    el.addEventListener("touchend", onTouchEnd, { passive: true });
-
-    el.addEventListener("mousedown", onMouseDown);
-    window.addEventListener("mousemove", onMouseMove);
-    window.addEventListener("mouseup", onMouseUp);
-
+    el.addEventListener("pointerdown", onPointerDown, { passive: true });
+    el.addEventListener("pointermove", onPointerMove, { passive: true });
+    el.addEventListener("pointerup", onPointerUp);
+    el.addEventListener("pointercancel", onPointerUp);
+    el.addEventListener("pointerleave", onPointerUp);
     return () => {
-      el.removeEventListener("touchstart", onTouchStart);
-      el.removeEventListener("touchmove", onTouchMove);
-      el.removeEventListener("touchend", onTouchEnd);
-
-      el.removeEventListener("mousedown", onMouseDown);
-      window.removeEventListener("mousemove", onMouseMove);
-      window.removeEventListener("mouseup", onMouseUp);
+      el.removeEventListener("pointerdown", onPointerDown);
+      el.removeEventListener("pointermove", onPointerMove);
+      el.removeEventListener("pointerup", onPointerUp);
+      el.removeEventListener("pointercancel", onPointerUp);
+      el.removeEventListener("pointerleave", onPointerUp);
     };
-  }, [gotoNextPage, gotoPrevPage]);
+  }, [activeIndex, setIndex]);
 
   return (
     <>
       <Header title="Tất cả nhiệm vụ" showBack noLine backFallback="/" />
-
       <PageContainer className="space-y-md">
         <Card>
           <div className="text-caption text-text-muted">Mốc 85%</div>
@@ -133,12 +154,9 @@ export default function TasksPage() {
           <div className="text-caption text-text-muted">95% • +20.000đ</div>
         </Card>
 
+        {/* Thanh tab 3-nút mỗi trang */}
         <div className="relative">
-          <div
-            ref={tabsWrapRef}
-            className={clsx("rounded-full p-1 pr-8 bg-[color:#F5EFE8] grid grid-cols-3 gap-1 select-none", dragging ? "cursor-grabbing" : "cursor-grab")}
-            style={{ transform: `translateX(${dragX}px)`, transition: dragging ? "none" : "transform 200ms ease" }}
-          >
+          <div className="rounded-full p-1 pr-8 bg-[color:#F5EFE8] grid grid-cols-3 gap-1">
             {currentTabs.map((t) => {
               const selected = tabKey === t.key;
               return (
@@ -150,7 +168,9 @@ export default function TasksPage() {
                   onClick={() => setTabKey(t.key)}
                   className={clsx(
                     "h-9 w-full rounded-full text-btn transition",
-                    selected ? "bg-[var(--color-primary,#F2994A)] text-white font-semibold" : "text-text-muted"
+                    selected
+                      ? "bg-[var(--color-primary,#F2994A)] text-white font-semibold"
+                      : "text-text-muted"
                   )}
                 >
                   {t.label}
@@ -158,13 +178,11 @@ export default function TasksPage() {
               );
             })}
           </div>
-
           {pageIdx === 0 ? (
             <button
               type="button"
               onClick={gotoNextPage}
               className="absolute right-1 top-1/2 -translate-y-1/2 w-6 h-6 rounded-md border border-border bg-white grid place-items-center text-caption text-text-muted"
-              aria-label="Sang trang tab kế tiếp"
             >
               ›
             </button>
@@ -173,31 +191,41 @@ export default function TasksPage() {
               type="button"
               onClick={gotoPrevPage}
               className="absolute right-1 top-1/2 -translate-y-1/2 w-6 h-6 rounded-md border border-border bg-white grid place-items-center text-caption text-text-muted"
-              aria-label="Về trang tab trước"
             >
               ‹
             </button>
           )}
         </div>
 
-        <div className="space-y-sm">
+        {/* Danh sách nhiệm vụ (vuốt ở đây để chuyển tab) */}
+        <div ref={swipeRef} className="space-y-sm select-none touch-pan-y">
           {list.map((item) => (
-            <div key={item.id} className="flex items-center justify-between rounded-control border border-border p-md bg-bg-card">
+            <div
+              key={item.id}
+              className="flex items-center justify-between rounded-control border border-border p-md bg-bg-card"
+            >
               <div className="flex items-center gap-sm">
-                <input type="checkbox" className="w-5 h-5" aria-label={`Đánh dấu ${item.title}`} />
+                <input type="checkbox" className="w-5 h-5" />
                 <div>
                   <div className="text-body font-medium">
-                    {item.title} <span className="text-caption text-text-muted">{item.progress}</span>
+                    {item.title}{" "}
+                    <span className="text-caption text-text-muted">{item.progress}</span>
                   </div>
-                  <div className="text-body font-medium text-[color:#2E7D32]">+{item.bonus.toLocaleString()}đ</div>
+                  <div className="text-body font-medium text-[color:#2E7D32]">
+                    +{item.bonus.toLocaleString()}đ
+                  </div>
                 </div>
               </div>
               <Link href={`/tasks/guide?type=${tabKey}&id=${item.id}`} className="flex-shrink-0">
-                <Button>Làm</Button>
+                <Button>Bắt đầu</Button>
               </Link>
             </div>
           ))}
-          {list.length === 0 && <div className="text-center text-caption text-text-muted py-md">Chưa có nhiệm vụ cho mục này.</div>}
+          {list.length === 0 && (
+            <div className="text-center text-caption text-text-muted py-md">
+              Chưa có nhiệm vụ cho mục này.
+            </div>
+          )}
         </div>
       </PageContainer>
     </>

@@ -1,10 +1,10 @@
 "use client";
 
-import { ReactNode, useCallback } from "react";
+import { ReactNode } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useMenu } from "./MenuProvider";
 
-type Props = {
+type HeaderProps = {
   title?: string;
   right?: ReactNode;
   showBack?: boolean;
@@ -26,18 +26,20 @@ export default function Header({
   backFallback = "/",
   forceFallback = false,
   closeTo,
-}: Props) {
+}: HeaderProps) {
   const router = useRouter();
   const search = useSearchParams();
-  const { toggleMenu } = useMenu();
+  const menu = useMenu();
+  const toggleMenu = menu?.toggleMenu ?? (() => {});
 
   const fromMenu = search?.get("src") === "menu";
 
-  const doDefaultBack = useCallback(() => {
+  const doDefaultBack = () => {
     if (forceFallback) return router.push(backFallback);
-    if (typeof window !== "undefined" && window.history.length > 1) router.back();
+    if (typeof window !== "undefined" && window.history.length > 1)
+      router.back();
     else router.push(backFallback);
-  }, [backFallback, forceFallback, router]);
+  };
 
   const onBack = () => {
     if (fromMenu) {
@@ -56,7 +58,12 @@ export default function Header({
   };
 
   return (
-    <header className={["sticky top-0 z-40 bg-bg-card/95 backdrop-blur", noLine ? "" : "border-b border-border"].join(" ")}>
+    <header
+      className={[
+        "sticky top-0 z-40 bg-bg-card/95 backdrop-blur",
+        noLine ? "" : "border-b border-border",
+      ].join(" ")}
+    >
       <div className="mx-auto max-w-md flex items-center gap-sm p-md">
         {!hideLeft &&
           (showBack ? (

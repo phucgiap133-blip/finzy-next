@@ -1,17 +1,16 @@
 "use client";
 
+import { useMenu } from "./MenuProvider";
+
 type Props = { className?: string };
 
 export default function MenuButton({ className = "" }: Props) {
-  // dùng trong Header nên chắc chắn ở trong MenuProvider
-  const { toggleMenu } = require("./MenuProvider") as typeof import("./MenuProvider");
-  const ctx = (toggleMenu as any) ? require("./MenuProvider").useMenu() : null;
-  const { toggleMenu: t } = ctx || { toggleMenu: () => {} };
+  const { toggleMenu } = useMenu();
 
   return (
     <button
       type="button"
-      onClick={t}
+      onClick={toggleMenu}
       aria-label="Mở menu"
       className={
         className ||

@@ -1,12 +1,23 @@
-import { PropsWithChildren, ReactNode } from "react";
+"use client";
+import React, { ReactNode } from "react";
 
-type Props = PropsWithChildren<{ title?: ReactNode }>;
+type Props = React.ComponentProps<"div"> & {
+  title?: ReactNode;
+};
 
-export default function Card({ title, children }: Props) {
+export default function Card({ title, className = "", ...rest }: Props) {
   return (
-    <div className="bg-bg-card rounded-control shadow-sm p-md border border-border">
-      {title && <div className="text-md font-medium mb-sm">{title}</div>}
-      {children}
+    <div
+      {...rest}
+      className={[
+        "bg-bg-card rounded-control shadow-sm p-md border border-border",
+        className || "",
+      ]
+        .join(" ")
+        .trim()}
+    >
+      {title && <div className="text-body font-medium mb-sm">{title}</div>}
+      {rest.children}
     </div>
   );
 }

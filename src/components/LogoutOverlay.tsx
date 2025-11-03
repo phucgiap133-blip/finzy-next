@@ -17,43 +17,63 @@ export default function LogoutOverlay() {
 
   return (
     <>
-      <div onClick={closeLogout} className="fixed inset-0 z-[70] bg-black/40" aria-hidden />
+      {/* backdrop Logout: z cao hơn Account */}
+      <div
+        onClick={closeLogout}
+        className="fixed inset-0 z-[80] bg-black/40"
+        aria-hidden
+      />
+      {/* dialog Logout: z cao hơn Account */}
       <section
         role="dialog"
         aria-modal="true"
-        onClick={(e) => e.stopPropagation()}
-        className="fixed z-[71] bg-bg-page rounded-2xl"
-        style={{
-          left: "var(--container-left, 16px)",
-          right: "var(--container-left, 16px)",
-          top: "var(--hero-top, 72px)",
-          maxHeight: "calc(100vh - var(--hero-top, 72px) - 24px)",
-          overflow: "auto",
-        }}
+        className="fixed inset-0 z-[81] flex items-start justify-center pt-20"
+        onClick={closeLogout}
       >
-        <div className="flex justify-end px-md pt-md">
-          <button onClick={closeLogout} className="w-9 h-9 grid place-items-center rounded-control border border-border" aria-label="Đóng">
-            ×
-          </button>
-        </div>
-
-        <PageContainer className="pb-lg">
-          <div className="bg-bg-card rounded-control border border-border shadow-sm p-xl text-center space-y-md">
-            <div className="text-h5 font-bold">Đăng xuất</div>
-            <p className="text-text-muted">Bạn có chắc chắn muốn đăng xuất khỏi tài khoản này?</p>
-
-            <label className="inline-flex items-center gap-sm text-caption text-text-muted">
-              <input type="checkbox" /> Đăng xuất khỏi thiết bị
-            </label>
-
-            <div className="flex justify-center gap-sm">
-              <button className="px-md py-sm rounded-control border border-border" onClick={closeLogout}>
-                Hủy
-              </button>
-              <Button>Đăng xuất</Button>
-            </div>
+        <div
+          onClick={(e) => e.stopPropagation()}
+          className="w-[min(720px,calc(100%-2rem))] rounded-2xl border border-border bg-bg-page shadow-xl"
+        >
+          <div className="flex justify-end px-md pt-md">
+            <button
+              onClick={closeLogout}
+              className="w-9 h-9 grid place-items-center rounded-control border border-border"
+              aria-label="Đóng"
+            >
+              ×
+            </button>
           </div>
-        </PageContainer>
+
+          <PageContainer className="pb-lg">
+            <div className="bg-bg-card rounded-control border border-border shadow-sm p-xl text-center space-y-md">
+              <div className="text-h5 font-bold">Đăng xuất</div>
+              <p className="text-text-muted">
+                Bạn có chắc chắn muốn đăng xuất khỏi tài khoản này?
+              </p>
+
+              <label className="inline-flex items-center gap-sm text-caption text-text-muted">
+                <input type="checkbox" /> Đăng xuất khỏi thiết bị
+              </label>
+
+              <div className="flex justify-center gap-sm">
+                <button
+                  className="px-md py-sm rounded-control border border-border"
+                  onClick={closeLogout}
+                >
+                  Hủy
+                </button>
+                <Button
+                  onClick={() => {
+                    // TODO: clear token / gọi API / rồi điều hướng nếu muốn
+                    closeLogout();
+                  }}
+                >
+                  Đăng xuất
+                </Button>
+              </div>
+            </div>
+          </PageContainer>
+        </div>
       </section>
     </>
   );

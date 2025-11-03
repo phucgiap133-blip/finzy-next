@@ -9,13 +9,20 @@ import PageContainer from "../../components/PageContainer";
 export default function PolicyPage() {
   return (
     <>
-      <Header title="Chính sách & Điều khoản" showBack noLine backFallback="/" />
+      <Header
+        title="Chính sách & Điều khoản"
+        showBack
+        noLine
+        backFallback="/"
+      />
       <PageContainer className="space-y-md">
         <div className="flex items-center gap-sm">
           <div className="flex-1 rounded-control border border-border bg-bg-card p-sm text-caption text-text-muted">
             Tìm kiếm
           </div>
-          <div className="text-caption text-text-muted">Cập nhật: 24/04/2024</div>
+          <div className="text-caption text-text-muted">
+            Cập nhật: 24/04/2024
+          </div>
         </div>
 
         <Card>
@@ -50,7 +57,9 @@ export default function PolicyPage() {
           </div>
 
           <div className="mt-md flex gap-sm">
-            <button className="px-md py-sm rounded-control border border-border flex-1 text-body">Hủy</button>
+            <button className="px-md py-sm rounded-control border border-border flex-1 text-body">
+              Hủy
+            </button>
             <div className="flex-1">
               <Button>Đăng xuất</Button>
             </div>

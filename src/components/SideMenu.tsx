@@ -28,7 +28,9 @@ export default function SideMenu() {
         onClick={closeMenu}
         className={[
           "fixed inset-0 z-[60] bg-black/40 transition-opacity lg:hidden",
-          open ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none",
+          open
+            ? "opacity-100 pointer-events-auto"
+            : "opacity-0 pointer-events-none",
         ].join(" ")}
         aria-hidden={!open}
       />
@@ -43,13 +45,19 @@ export default function SideMenu() {
         ].join(" ")}
         style={{
           left: "var(--container-left, 16px)",
-          transform: open ? "translateX(0)" : "translateX(calc(-100% - var(--container-left, 16px)))",
+          transform: open
+            ? "translateX(0)"
+            : "translateX(calc(-100% - var(--container-left, 16px)))",
           backdropFilter: "saturate(180%) blur(8px)",
         }}
       >
         <div className="p-md flex items-center justify-between">
           <div className="text-h5 font-bold">Finzy. tech</div>
-          <button onClick={closeMenu} className="w-8 h-8 grid place-items-center rounded-control border border-border" aria-label="Đóng menu">
+          <button
+            onClick={closeMenu}
+            className="w-8 h-8 grid place-items-center rounded-control border border-border"
+            aria-label="Đóng menu"
+          >
             ×
           </button>
         </div>
@@ -73,7 +81,9 @@ export default function SideMenu() {
             </Link>
           ))}
 
-          <div className="text-caption text-text-muted px-sm pt-sm">Tài khoản</div>
+          <div className="text-caption text-text-muted px-sm pt-sm">
+            Tài khoản
+          </div>
 
           <Link
             href={{ pathname: "/policy", query: { src: "menu" } }}

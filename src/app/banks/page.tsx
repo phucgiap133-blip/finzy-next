@@ -36,7 +36,9 @@ export default function BanksPage() {
     }
   };
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => {
+    load();
+  }, []);
 
   const onDelete = (id: string) => setConfirmId(id);
   const closeModal = () => setConfirmId(null);
@@ -72,13 +74,18 @@ export default function BanksPage() {
           {loading ? (
             <div className="text-caption text-text-muted">Đang tải…</div>
           ) : items.length === 0 ? (
-            <div className="text-caption text-text-muted">Chưa có tài khoản ngân hàng.</div>
+            <div className="text-caption text-text-muted">
+              Chưa có tài khoản ngân hàng.
+            </div>
           ) : (
             <div className="space-y-md">
               {items.map((item) => {
                 const isDefault = selectedId === item.id;
                 return (
-                  <div key={item.id} className="flex items-center justify-between">
+                  <div
+                    key={item.id}
+                    className="flex items-center justify-between"
+                  >
                     <div className="flex items-center gap-sm">
                       <div className="w-8 h-8 rounded-[8px] bg-[color:#4F46E5] text-white grid place-items-center text-caption font-bold">
                         🏦
@@ -87,7 +94,9 @@ export default function BanksPage() {
                         <div className="text-body font-medium">
                           {item.bankName} *****{item.last4}
                         </div>
-                        <div className="text-caption text-text-muted">{item.holder}</div>
+                        <div className="text-caption text-text-muted">
+                          {item.holder}
+                        </div>
                       </div>
                     </div>
 
@@ -156,7 +165,10 @@ export default function BanksPage() {
                 ?
               </div>
               <div className="mt-md flex justify-center gap-sm">
-                <button className="px-md py-sm rounded-control border border-border" onClick={closeModal}>
+                <button
+                  className="px-md py-sm rounded-control border border-border"
+                  onClick={closeModal}
+                >
                   Hủy
                 </button>
                 <button

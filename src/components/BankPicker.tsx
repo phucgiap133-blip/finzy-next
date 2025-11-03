@@ -7,6 +7,7 @@ type Props = {
   onChange?: (v: string) => void;
   placeholder?: string;
   searchPlaceholder?: string;
+  className?: string;
 };
 
 export default function BankPicker({
@@ -15,6 +16,7 @@ export default function BankPicker({
   onChange = () => {},
   placeholder = "Chọn ngân hàng",
   searchPlaceholder = "Tìm tên hoặc mã ngân hàng…",
+  className = "",
 }: Props) {
   const [open, setOpen] = useState(false);
   const [q, setQ] = useState("");
@@ -30,10 +32,10 @@ export default function BankPicker({
   }, [banks, q]);
 
   useEffect(() => {
-    function onClickOutside(e: MouseEvent) {
+    const onClickOutside = (e: MouseEvent) => {
       if (!rootRef.current) return;
       if (!rootRef.current.contains(e.target as Node)) setOpen(false);
-    }
+    };
     document.addEventListener("mousedown", onClickOutside);
     return () => document.removeEventListener("mousedown", onClickOutside);
   }, []);
@@ -58,13 +60,13 @@ export default function BankPicker({
 
     if (e.key === "ArrowDown") {
       e.preventDefault();
-      setActive((i) => Math.min(i + 1, filtered.length - 1));
       const idx = Math.min(active + 1, filtered.length - 1);
+      setActive(idx);
       listRef.current?.children?.[idx]?.scrollIntoView({ block: "nearest" });
     } else if (e.key === "ArrowUp") {
       e.preventDefault();
-      setActive((i) => Math.max(i - 1, 0));
       const idx = Math.max(active - 1, 0);
+      setActive(idx);
       listRef.current?.children?.[idx]?.scrollIntoView({ block: "nearest" });
     } else if (e.key === "Enter") {
       e.preventDefault();
@@ -75,7 +77,7 @@ export default function BankPicker({
   };
 
   return (
-    <div ref={rootRef} className="relative">
+    <div ref={rootRef} className={`relative ${className}`}>
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
@@ -85,7 +87,6 @@ export default function BankPicker({
       >
         {value || placeholder}
       </button>
-
       {open && (
         <div className="absolute z-20 mt-2 w-full rounded-[12px] border border-border bg-white shadow-md">
           <div className="p-sm border-b border-border">
@@ -102,7 +103,9 @@ export default function BankPicker({
 
           <div ref={listRef} role="listbox" className="max-h-64 overflow-auto">
             {filtered.length === 0 ? (
-              <div className="px-md py-sm text-sm text-text-muted">Không tìm thấy ngân hàng</div>
+              <div className="px-md py-sm text-sm text-text-muted">
+                Không tìm thấy ngân hàng
+              </div>
             ) : (
               filtered.map((item, i) => (
                 <button

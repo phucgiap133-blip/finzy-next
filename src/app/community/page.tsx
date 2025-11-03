@@ -13,19 +13,27 @@ export default function CommunityPage() {
           <div className="flex items-center gap-md">
             <div className="w-10 h-10 rounded-full bg-[color:#229ED9]" />
             <div className="flex-1">
-              <div className="text-body font-medium">Nhóm Telegram Chính thức</div>
-              <div className="text-caption text-text-muted">Nhận thông báo & hỗ trợ 24/7</div>
+              <div className="text-body font-medium">
+                Nhóm Telegram Chính thức
+              </div>
+              <div className="text-caption text-text-muted">
+                Nhận thông báo & hỗ trợ 24/7
+              </div>
             </div>
             <Button>Tham gia</Button>
           </div>
 
           <div className="mt-md flex items-center gap-sm">
             <div className="text-body">Link: t.me/hh</div>
-            <button className="px-sm py-xs rounded-control border border-border text-body">Sao chép</button>
+            <button className="px-sm py-xs rounded-control border border-border text-body">
+              Sao chép
+            </button>
           </div>
 
           <div className="mt-md">
-            <div className="text-caption text-text-muted mb-xs">QR tham gia</div>
+            <div className="text-caption text-text-muted mb-xs">
+              QR tham gia
+            </div>
             <div className="w-28 h-28 bg-[color:#EDEDED] rounded-control" />
           </div>
 

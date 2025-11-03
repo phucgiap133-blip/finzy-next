@@ -1,5 +1,5 @@
+// src/components/OTPInput.tsx
 "use client";
-
 import { useRef, useEffect } from "react";
 
 type Props = {
@@ -37,7 +37,9 @@ export default function OTPInput({ length = 4, value = "", onChange }: Props) {
       {Array.from({ length }).map((_, i) => (
         <input
           key={i}
-          ref={(el) => (refs.current[i] = el)}
+          ref={(el) => {
+            refs.current[i] = el; // ✅ trả về void, không return el
+          }}
           inputMode="numeric"
           maxLength={1}
           className="w-12 h-12 rounded-control border border-border text-center text-md"

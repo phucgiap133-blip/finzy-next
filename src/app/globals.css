@@ -12,7 +12,9 @@
   --semantic-color-brand-primary: #f29b49;
 }
 
-html, body, #__next {
+html,
+body,
+#__next {
   height: 100%;
 }
 
@@ -22,22 +24,46 @@ body {
   color: var(--semantic-color-text-default);
 }
 
-.no-scrollbar::-webkit-scrollbar { display: none; }
-.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
 
-:where(h1,h2,h3,h4,h5,h6){
+:where(h1, h2, h3, h4, h5, h6) {
   font: inherit;
   margin: 0;
 }
 
 @layer base {
-  h1 { @apply text-h1; }
-  h2 { @apply text-h2; }
-  h3 { @apply text-h3; }
-  h4 { @apply text-h4; }
-  h5 { @apply text-h5; }
-  h6 { @apply text-h6; }
-  p { @apply text-body; }
-  small, .caption { @apply text-caption; }
-  .btn-text { @apply text-btn; }
+  h1 {
+    @apply text-h1;
+  }
+  h2 {
+    @apply text-h2;
+  }
+  h3 {
+    @apply text-h3;
+  }
+  h4 {
+    @apply text-h4;
+  }
+  h5 {
+    @apply text-h5;
+  }
+  h6 {
+    @apply text-h6;
+  }
+  p {
+    @apply text-body;
+  }
+  small,
+  .caption {
+    @apply text-caption;
+  }
+  .btn-text {
+    @apply text-btn;
+  }
 }

@@ -22,8 +22,14 @@ const ALL: InviteItem[] = [
 
 const STATUS: Record<Status, { text: string; badge: string }> = {
   doing: { text: "Đang làm", badge: "bg-[color:#FFE4DE] text-[color:#C84C32]" },
-  pending: { text: "Chờ rút", badge: "bg-[color:#FFE8B0] text-[color:#8A5A00]" },
-  done: { text: "Đã hoàn thành", badge: "bg-[color:#DFF0D8] text-[color:#3C763D]" },
+  pending: {
+    text: "Chờ rút",
+    badge: "bg-[color:#FFE8B0] text-[color:#8A5A00]",
+  },
+  done: {
+    text: "Đã hoàn thành",
+    badge: "bg-[color:#DFF0D8] text-[color:#3C763D]",
+  },
 };
 
 export default function ReferralPage() {
@@ -51,9 +57,12 @@ export default function ReferralPage() {
     <>
       <Header title="Giới thiệu bạn bè" showBack noLine backFallback="/" />
       <PageContainer className="space-y-md">
-        <div className="text-[color:#2E7D32] text-body font-semibold">+10.000đ cho mỗi người</div>
+        <div className="text-[color:#2E7D32] text-body font-semibold">
+          +10.000đ cho mỗi người
+        </div>
         <div className="text-caption text-text-muted">
-          Thưởng cộng ngay khi bạn của bạn rút tiền đầu tiên được xác nhận thành công.
+          Thưởng cộng ngay khi bạn của bạn rút tiền đầu tiên được xác nhận thành
+          công.
         </div>
 
         <div className="flex gap-sm">
@@ -64,12 +73,20 @@ export default function ReferralPage() {
             readOnly
             aria-label="Link giới thiệu"
           />
-          <button onClick={copyLink} className="px-md py-sm rounded-control border border-border text-body" aria-label="Sao chép link giới thiệu">
+          <button
+            onClick={copyLink}
+            className="px-md py-sm rounded-control border border-border text-body"
+            aria-label="Sao chép link giới thiệu"
+          >
             Sao chép
           </button>
         </div>
 
-        <div className="rounded-[12px] bg-[color:#F6F1E8] p-[6px] flex gap-sm" role="tablist" aria-label="Lọc trạng thái lời mời">
+        <div
+          className="rounded-[12px] bg-[color:#F6F1E8] p-[6px] flex gap-sm"
+          role="tablist"
+          aria-label="Lọc trạng thái lời mời"
+        >
           {[
             { id: "doing", label: "Đang làm" },
             { id: "pending", label: "Chờ rút" },
@@ -81,7 +98,9 @@ export default function ReferralPage() {
               aria-selected={tab === (t.id as Status)}
               onClick={() => setTab(t.id as Status)}
               className={`flex-1 py-xs rounded-full ${
-                tab === t.id ? "bg-white shadow-sm text-body font-medium" : "text-caption text-text-muted"
+                tab === t.id
+                  ? "bg-white shadow-sm text-body font-medium"
+                  : "text-caption text-text-muted"
               }`}
             >
               {t.label}
@@ -91,19 +110,27 @@ export default function ReferralPage() {
 
         <div className="space-y-sm">
           {filtered.length === 0 ? (
-            <div className="text-center text-caption text-text-muted py-md">Chưa có mục nào trong danh sách này.</div>
+            <div className="text-center text-caption text-text-muted py-md">
+              Chưa có mục nào trong danh sách này.
+            </div>
           ) : (
             filtered.map((u) => (
               <Card key={u.id}>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-sm">
-                    <div className="w-6 h-6 rounded-[8px] bg-[color:#FF6D5A] grid place-items-center text-white text-caption">∞</div>
+                    <div className="w-6 h-6 rounded-[8px] bg-[color:#FF6D5A] grid place-items-center text-white text-caption">
+                      ∞
+                    </div>
                     <div>
                       <div className="text-body font-medium">{u.name}</div>
-                      <div className="text-caption text-text-muted">{u.phone}</div>
+                      <div className="text-caption text-text-muted">
+                        {u.phone}
+                      </div>
                     </div>
                   </div>
-                  <span className={`px-md py-xs rounded-full text-caption ${STATUS[u.status].badge}`}>
+                  <span
+                    className={`px-md py-xs rounded-full text-caption ${STATUS[u.status].badge}`}
+                  >
                     {STATUS[u.status].text}
                   </span>
                 </div>

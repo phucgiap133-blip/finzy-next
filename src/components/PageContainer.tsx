@@ -1,24 +1,20 @@
-import { HTMLAttributes, ReactNode } from "react";
+"use client";
+import React from "react";
 
-type Props = HTMLAttributes<HTMLElement> & {
-  children: ReactNode;
-  className?: string;
-  id?: string;
-};
+type Props = React.ComponentProps<"main">;
 
-export default function PageContainer({ children, className = "", id, ...rest }: Props) {
+export default function PageContainer({ className = "", ...rest }: Props) {
   return (
     <main
-      id={id}
+      {...rest}
       className={[
         "mx-auto w-full px-4 md:px-6 py-6",
         "max-w-[420px] sm:max-w-screen-sm md:max-w-screen-md",
         "lg:max-w-screen-lg xl:max-w-screen-xl",
-        className,
-      ].join(" ")}
-      {...rest}
-    >
-      {children}
-    </main>
+        className || "",
+      ]
+        .join(" ")
+        .trim()}
+    />
   );
 }

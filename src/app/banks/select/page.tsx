@@ -1,6 +1,8 @@
+// src/app/banks/select/page.tsx
 "use client";
 
 import { useState, useMemo } from "react";
+import { useRouter } from "next/navigation";
 import Header from "../../../components/Header";
 import Card from "../../../components/Card";
 import PageContainer from "../../../components/PageContainer";
@@ -8,31 +10,34 @@ import PageContainer from "../../../components/PageContainer";
 type Bank = { code: string; name: string; logo: string };
 
 const BANKS: Bank[] = [
-  { code: "VCB",  name: "Vietcombank",        logo: "https://logo.clearbit.com/vietcombank.com.vn" },
-  { code: "CTG",  name: "VietinBank",         logo: "https://logo.clearbit.com/vietinbank.vn" },
-  { code: "BIDV", name: "BIDV",               logo: "https://logo.clearbit.com/bidv.com.vn" },
-  { code: "AGR",  name: "Agribank",           logo: "https://logo.clearbit.com/agribank.com.vn" },
-  { code: "TCB",  name: "Techcombank",        logo: "https://logo.clearbit.com/techcombank.com.vn" },
-  { code: "MBB",  name: "MB Bank",            logo: "https://logo.clearbit.com/mbbank.com.vn" },
-  { code: "ACB",  name: "ACB",                logo: "https://logo.clearbit.com/acb.com.vn" },
-  { code: "STB",  name: "Sacombank",          logo: "https://logo.clearbit.com/sacombank.com.vn" },
-  { code: "VPB",  name: "VPBank",             logo: "https://logo.clearbit.com/vpbank.com.vn" },
-  { code: "TPB",  name: "TPBank",             logo: "https://logo.clearbit.com/tpbank.com.vn" },
-  { code: "VIB",  name: "VIB",                logo: "https://logo.clearbit.com/vib.com.vn" },
-  { code: "SHB",  name: "SHB",                logo: "https://logo.clearbit.com/shb.com.vn" },
-  { code: "OCB",  name: "OCB",                logo: "https://logo.clearbit.com/ocb.com.vn" },
-  { code: "EIB",  name: "Eximbank",           logo: "https://logo.clearbit.com/eximbank.com.vn" },
-  { code: "SCB",  name: "SCB",                logo: "https://logo.clearbit.com/scb.com.vn" },
-  { code: "SEAB", name: "SeaBank",            logo: "https://logo.clearbit.com/seabank.com.vn" },
-  { code: "VCBI", name: "VietCapital Bank",   logo: "https://logo.clearbit.com/vietcapitalbank.com.vn" },
-  { code: "BAB",  name: "BacABank",           logo: "https://logo.clearbit.com/bacabank.com.vn" },
-  { code: "NCB",  name: "NCB",                logo: "https://logo.clearbit.com/ncb-bank.vn" },
-  { code: "PVCOM",name: "PVComBank",          logo: "https://logo.clearbit.com/pvcombank.com.vn" },
-  { code: "KLB",  name: "KienlongBank",       logo: "https://logo.clearbit.com/kienlongbank.com" },
-  { code: "NAB",  name: "Nam Á Bank",         logo: "https://logo.clearbit.com/namabank.com.vn" },
-  { code: "MSB",  name: "Maritime Bank",      logo: "https://logo.clearbit.com/msb.com.vn" },
-  { code: "ABB",  name: "ABBANK",             logo: "https://logo.clearbit.com/abbank.vn" },
-  { code: "HDB",  name: "HDBank",             logo: "https://logo.clearbit.com/hdbank.com.vn" },
+  { code: "VCB", name: "Vietcombank", logo: "https://logo.clearbit.com/vietcombank.com.vn" },
+  { code: "CTG", name: "VietinBank", logo: "https://logo.clearbit.com/vietinbank.vn" },
+  { code: "BIDV", name: "BIDV", logo: "https://logo.clearbit.com/bidv.com.vn" },
+  { code: "AGR", name: "Agribank", logo: "https://logo.clearbit.com/agribank.com.vn" },
+  { code: "TCB", name: "Techcombank", logo: "https://logo.clearbit.com/techcombank.com.vn" },
+  { code: "MBB", name: "MB Bank", logo: "https://logo.clearbit.com/mbbank.com.vn" },
+  { code: "ACB", name: "ACB", logo: "https://logo.clearbit.com/acb.com.vn" },
+  { code: "STB", name: "Sacombank", logo: "https://logo.clearbit.com/sacombank.com.vn" },
+  { code: "VPB", name: "VPBank", logo: "https://logo.clearbit.com/vpbank.com.vn" },
+  { code: "TPB", name: "TPBank", logo: "https://logo.clearbit.com/tpbank.com.vn" },
+  { code: "VIB", name: "VIB", logo: "https://logo.clearbit.com/vib.com.vn" },
+  { code: "SHB", name: "SHB", logo: "https://logo.clearbit.com/shb.com.vn" },
+  { code: "OCB", name: "OCB", logo: "https://logo.clearbit.com/ocb.com.vn" },
+  { code: "EIB", name: "Eximbank", logo: "https://logo.clearbit.com/eximbank.com.vn" },
+  { code: "SCB", name: "SCB", logo: "https://logo.clearbit.com/scb.com.vn" },
+  { code: "SEAB", name: "SeaBank", logo: "https://logo.clearbit.com/seabank.com.vn" },
+  { code: "VCBI", name: "VietCapital Bank", logo: "https://logo.clearbit.com/vietcapitalbank.com.vn" },
+  { code: "BAB", name: "BacABank", logo: "https://logo.clearbit.com/bacabank.com.vn" },
+  { code: "NCB", name: "NCB", logo: "https://logo.clearbit.com/ncb-bank.vn" },
+  { code: "PVCOM", name: "PVComBank", logo: "https://logo.clearbit.com/pvcombank.com.vn" },
+  { code: "KLB", name: "KienlongBank", logo: "https://logo.clearbit.com/kienlongbank.com" },
+  { code: "NAB", name: "Nam Á Bank", logo: "https://logo.clearbit.com/namabank.com.vn" },
+  { code: "MSB", name: "Maritime Bank", logo: "https://logo.clearbit.com/msb.com.vn" },
+  { code: "ABB", name: "ABBANK", logo: "https://logo.clearbit.com/abbank.vn" },
+  { code: "HDB", name: "HDBank", logo: "https://logo.clearbit.com/hdbank.com.vn" },
+  // Ví điện tử
+  { code: "MOMO", name: "MoMo", logo: "https://logo.clearbit.com/momo.vn" },
+  { code: "ZLP", name: "ZaloPay", logo: "https://logo.clearbit.com/zalopay.vn" },
 ];
 
 const norm = (s: string) =>
@@ -45,13 +50,22 @@ const norm = (s: string) =>
     .replace(/\s+/g, " ");
 
 export default function SelectBankPage() {
+  const router = useRouter();
   const [query, setQuery] = useState<string>("");
 
   const filtered = useMemo<Bank[]>(() => {
     const q = norm(query);
     if (!q) return BANKS;
-    return BANKS.filter((b) => norm(b.name).includes(q) || norm(b.code).includes(q));
+    return BANKS.filter(
+      (b) => norm(b.name).includes(q) || norm(b.code).includes(q),
+    );
   }, [query]);
+
+  const pick = (b: Bank) => {
+    // Điều hướng sang trang thêm ngân hàng và điền sẵn tên dạng "MB Bank (MBB)"
+    const bankName = `${b.name} (${b.code})`;
+    router.push(`/banks/add?bank=${encodeURIComponent(bankName)}`);
+  };
 
   return (
     <>
@@ -76,13 +90,15 @@ export default function SelectBankPage() {
               <button
                 key={b.code}
                 className="w-full flex items-center gap-sm py-sm hover:bg-[color:#FAFAFA] text-left"
-                onClick={() => alert(`Chọn ${b.name}`)}
+                onClick={() => pick(b)}
               >
                 <img
                   src={b.logo}
                   alt={b.name}
                   className="w-8 h-8 rounded-full object-cover"
-                  onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
+                  onError={(e) => {
+                    (e.currentTarget as HTMLImageElement).style.display = "none";
+                  }}
                 />
                 <div className="flex-1">
                   <div className="text-body font-medium">{b.name}</div>

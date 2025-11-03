@@ -1,13 +1,13 @@
+// src/components/EmailSmartButton.tsx
 "use client";
-
-import { MouseEvent, ReactNode } from "react";
+import React from "react";
 
 type Props = {
   to?: string;
   subject?: string;
   body?: string;
   className?: string;
-  children?: ReactNode;
+  children?: React.ReactNode;
 };
 
 export default function EmailSmartButton({
@@ -17,7 +17,7 @@ export default function EmailSmartButton({
   className = "",
   children = "Gửi email",
 }: Props) {
-  const onClick = (e: MouseEvent<HTMLAnchorElement>) => {
+  const onClick: React.MouseEventHandler<HTMLAnchorElement> = (e) => {
     e.preventDefault();
     const ua = typeof window !== "undefined" ? navigator.userAgent : "";
     const isMobile = /Android|iPhone|iPad|iPod|IEMobile|Opera Mini/i.test(ua);
@@ -34,7 +34,12 @@ export default function EmailSmartButton({
   };
 
   return (
-    <a href={`mailto:${to}`} onClick={onClick} className={className} rel="noopener noreferrer">
+    <a
+      href={`mailto:${to}`}
+      onClick={onClick}
+      className={className}
+      rel="noopener noreferrer"
+    >
       {children}
     </a>
   );

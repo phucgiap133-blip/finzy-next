@@ -1,27 +1,37 @@
+// src/app/logout/page.tsx
 "use client";
 
-import Link from "next/link";
-import { useMenu } from "./MenuProvider";
+import { useRouter } from "next/navigation";
+import Button from "@/components/Button";
+import PageContainer from "@/components/PageContainer";
 
-type MenuCtx = { openLogout: () => void; closeMenu: () => void };
+export default function LogoutPage() {
+  const router = useRouter();
 
-export default function MenuList() {
-  const { openLogout, closeMenu } = useMenu() as MenuCtx;
+  const handleCancel = () => router.back();
+  const handleLogout = () => {
+    localStorage.removeItem("authToken"); // nếu có
+    router.replace("/"); // quay về Trang chủ
+  };
 
   return (
-    <nav className="space-y-sm">
-      <Link href="/" className="...">Trang chủ</Link>
-      <Link href="/tasks" className="...">Tất cả nhiệm vụ</Link>
+    <PageContainer className="min-h-screen flex items-center justify-center bg-bg-page">
+      <div className="bg-white border border-border shadow-md rounded-2xl p-xl max-w-sm w-full text-center space-y-md">
+        <h1 className="text-h5 font-bold">Đăng xuất</h1>
+        <p className="text-text-muted">
+          Bạn có chắc chắn muốn đăng xuất khỏi tài khoản này?
+        </p>
 
-      <button
-        onClick={() => {
-          closeMenu();
-          openLogout();
-        }}
-        className="w-full text-left rounded-control border border-border px-md py-sm"
-      >
-        Đăng xuất
-      </button>
-    </nav>
+        <div className="flex justify-center gap-sm mt-md">
+          <button
+            onClick={handleCancel}
+            className="px-md py-sm rounded-control border border-border"
+          >
+            Hủy
+          </button>
+          <Button onClick={handleLogout}>Đăng xuất</Button>
+        </div>
+      </div>
+    </PageContainer>
   );
 }

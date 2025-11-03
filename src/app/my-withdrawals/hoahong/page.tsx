@@ -14,11 +14,17 @@ type CommissionItem = {
   createdAt: string;
 };
 
-export default function HoaHongPage({ embedded = false }: { embedded?: boolean }) {
+export default function HoaHongPage({
+  embedded = false,
+}: {
+  embedded?: boolean;
+}) {
   const [rows, setRows] = useState<CommissionItem[]>([]);
 
   useEffect(() => {
-    api.history.commissions.get().then((res: { items: CommissionItem[] }) => setRows(res.items));
+    api.history.commissions
+      .get()
+      .then((res: { items: CommissionItem[] }) => setRows(res.items));
   }, []);
 
   const todayTotal = useMemo(() => {
@@ -41,7 +47,11 @@ export default function HoaHongPage({ embedded = false }: { embedded?: boolean }
   }, [rows]);
 
   const tone = (status: CommissionItem["status"]) =>
-    status === "Thành công" ? "success" : status === "Đang xử lý" ? "warning" : "danger";
+    status === "Thành công"
+      ? "success"
+      : status === "Đang xử lý"
+        ? "warning"
+        : "danger";
 
   return (
     <>
@@ -50,11 +60,15 @@ export default function HoaHongPage({ embedded = false }: { embedded?: boolean }
         <div className="flex justify-between text-body mb-md">
           <div>
             Hôm nay{" "}
-            <span style={{ color: "#2E7D32" }}>+{todayTotal.toLocaleString("vi-VN")}đ</span>
+            <span style={{ color: "#2E7D32" }}>
+              +{todayTotal.toLocaleString("vi-VN")}đ
+            </span>
           </div>
           <div>
             Tháng này{" "}
-            <span style={{ color: "#2E7D32" }}>+{monthTotal.toLocaleString("vi-VN")}đ</span>
+            <span style={{ color: "#2E7D32" }}>
+              +{monthTotal.toLocaleString("vi-VN")}đ
+            </span>
           </div>
         </div>
 
@@ -62,7 +76,9 @@ export default function HoaHongPage({ embedded = false }: { embedded?: boolean }
           {rows.map((it) => (
             <Card key={it.id}>
               <div className="flex items-center justify-between">
-                <div className="text-body font-medium">+{it.amount.toLocaleString("vi-VN")}đ</div>
+                <div className="text-body font-medium">
+                  +{it.amount.toLocaleString("vi-VN")}đ
+                </div>
                 <Tag tone={tone(it.status)}>{it.status}</Tag>
               </div>
               <div className="text-caption text-text-muted">
@@ -70,7 +86,11 @@ export default function HoaHongPage({ embedded = false }: { embedded?: boolean }
               </div>
             </Card>
           ))}
-          {rows.length === 0 && <div className="text-caption text-text-muted">Chưa có hoa hồng.</div>}
+          {rows.length === 0 && (
+            <div className="text-caption text-text-muted">
+              Chưa có hoa hồng.
+            </div>
+          )}
         </div>
       </PageContainer>
     </>

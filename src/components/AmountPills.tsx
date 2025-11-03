@@ -1,9 +1,14 @@
+"use client";
+
 type Props = {
   amounts?: number[];
   onSelect?: (v: number) => void;
 };
 
-export default function AmountPills({ amounts = [50000, 100000, 200000], onSelect }: Props) {
+export default function AmountPills({
+  amounts = [50000, 100000, 200000],
+  onSelect,
+}: Props) {
   return (
     <div className="grid grid-cols-3 gap-sm">
       {amounts.map((a) => (

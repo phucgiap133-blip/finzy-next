@@ -1,44 +1,33 @@
-import { ReactNode, ChangeEventHandler } from "react";
-
-type Props = {
-  label?: ReactNode;
-  placeholder?: string;
+type InputProps = {
+  label?: string;
   type?: string;
-  value?: string | number;
-  onChange?: ChangeEventHandler<HTMLInputElement>;
-  error?: ReactNode;
-  hint?: ReactNode;
-  left?: ReactNode;
-  right?: ReactNode;
+  value?: string;
+  placeholder?: string;
+  className?: string;
+  onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onBlur?: (e: React.FocusEvent<HTMLInputElement>) => void; // 🟢 thêm dòng này
 };
 
 export default function Input({
   label,
-  placeholder,
   type = "text",
   value,
+  placeholder,
+  className = "",
   onChange,
-  error,
-  hint,
-  left,
-  right,
-}: Props) {
+  onBlur, // 🟢 thêm vào destructuring
+}: InputProps) {
   return (
-    <label className="block">
-      {label && <div className="mb-xs text-sm font-medium text-text-muted">{label}</div>}
-      <div className="flex items-center gap-sm rounded-control border border-border bg-bg-card px-md py-sm shadow-sm focus-within:shadow-md">
-        {left && <span className="shrink-0">{left}</span>}
-        <input
-          className="w-full bg-transparent outline-none text-md placeholder:text-text-muted"
-          placeholder={placeholder}
-          type={type}
-          value={value}
-          onChange={onChange}
-        />
-        {right && <span className="shrink-0">{right}</span>}
-      </div>
-      {hint && !error && <div className="mt-xs text-sm text-text-muted">{hint}</div>}
-      {error && <div className="mt-xs text-sm text-[color:#D9534F]">{error}</div>}
-    </label>
+    <div className="space-y-1">
+      {label && <label className="text-sm font-medium">{label}</label>}
+      <input
+        type={type}
+        value={value}
+        onChange={onChange}
+        onBlur={onBlur} // 🟢 truyền xuống input thật
+        placeholder={placeholder}
+        className={`w-full rounded-md border px-3 py-2 outline-none ${className}`}
+      />
+    </div>
   );
 }

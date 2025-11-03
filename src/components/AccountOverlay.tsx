@@ -1,17 +1,15 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect } from "react";
-import { useMenu } from "./MenuProvider";
-import Button from "./Button";
-import PageContainer from "./PageContainer";
-import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { useMenu } from "@/components/MenuProvider";
+import Button from "@/components/Button";
+import PageContainer from "@/components/PageContainer";
 
 export default function AccountOverlay() {
-  const { accountOpen, closeAccount } = useMenu();
-  const router = useRouter();
+  const { accountOpen, closeAccount, openLogout } = useMenu();
 
-  // Khoá scroll khi mở
+  // Lock body scroll when account is open
   useEffect(() => {
     if (!accountOpen) return;
     const prev = document.body.style.overflow;
@@ -21,33 +19,34 @@ export default function AccountOverlay() {
     };
   }, [accountOpen]);
 
-  // ESC để đóng
+  // ESC to close Account overlay
   useEffect(() => {
     if (!accountOpen) return;
-    const onKey = (e) => e.key === "Escape" && closeAccount();
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") closeAccount();
+    };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [accountOpen, closeAccount]);
 
-  // Không mở thì không render (tránh chặn click)
   if (!accountOpen) return null;
 
   return (
     <>
-      {/* click ra ngoài để đóng */}
+      {/* Backdrop for Account (lower z-index than LogoutOverlay) */}
       <div
         onClick={closeAccount}
-        className="fixed inset-0 z-[70] bg-transparent"
+        className="fixed inset-0 z-[60] bg-transparent"
         aria-hidden
       />
 
-      {/* panel khớp mép container & hero */}
+      {/* Account panel */}
       <section
         role="dialog"
         aria-modal="true"
         aria-label="Tài khoản"
         onClick={(e) => e.stopPropagation()}
-        className="fixed z-[71] bg-bg-page rounded-2xl"
+        className="fixed z-[61] bg-bg-page rounded-2xl"
         style={{
           left: "var(--container-left, 16px)",
           right: "var(--container-left, 16px)",
@@ -56,7 +55,7 @@ export default function AccountOverlay() {
           overflow: "auto",
         }}
       >
-        {/* nút đóng trong panel */}
+        {/* Close (inside the panel) */}
         <div className="flex justify-end px-md pt-md">
           <button
             onClick={closeAccount}
@@ -68,18 +67,20 @@ export default function AccountOverlay() {
         </div>
 
         <PageContainer className="space-y-md pb-lg">
-          {/* card có bóng */}
+          {/* Profile card */}
           <div className="bg-bg-card rounded-control p-lg shadow-md border border-border mt-md">
             <div className="flex flex-col items-center">
               <div className="w-16 h-16 rounded-full grid place-items-center shadow-sm border border-border">
                 <span className="text-brand-primary text-2xl font-bold">∞</span>
               </div>
               <div className="mt-sm text-body font-medium">Tuấn</div>
-              <div className="text-caption text-text-muted">privacy@gmail.com</div>
+              <div className="text-caption text-text-muted">
+                privacy@gmail.com
+              </div>
               <div className="mt-sm text-stat font-bold">37.000đ</div>
             </div>
 
-            {/* chips nhanh */}
+            {/* Quick chips */}
             <div className="mt-md flex gap-sm justify-center flex-wrap">
               <Link
                 href="/wallet"
@@ -90,7 +91,7 @@ export default function AccountOverlay() {
                 Ví
               </Link>
               <Link
-                href="/withdraw"
+                href="/withdraw?from=account"
                 prefetch={false}
                 onClick={closeAccount}
                 className="px-md py-xs rounded-control bg-[color:#FFF3E0] text-body font-medium"
@@ -107,7 +108,7 @@ export default function AccountOverlay() {
               </Link>
             </div>
 
-            {/* links */}
+            {/* Links grid */}
             <div className="mt-md grid gap-sm sm:grid-cols-2">
               <Link
                 href="/settings"
@@ -116,7 +117,8 @@ export default function AccountOverlay() {
                 className="flex items-center justify-between rounded-control border border-border p-md bg-bg-card text-body font-medium"
               >
                 <span className="flex items-center gap-sm">
-                  <span className="w-5 h-5 grid place-items-center">⚙️</span>Cài đặt
+                  <span className="w-5 h-5 grid place-items-center">⚙️</span>Cài
+                  đặt
                 </span>
                 <span className="text-caption text-text-muted">›</span>
               </Link>
@@ -127,19 +129,20 @@ export default function AccountOverlay() {
                 className="flex items-center justify-between rounded-control border border-border p-md bg-bg-card text-body font-medium"
               >
                 <span className="flex items-center gap-sm">
-                  <span className="w-5 h-5 grid place-items-center">🛟</span>Hỗ trợ
+                  <span className="w-5 h-5 grid place-items-center">🛟</span>Hỗ
+                  trợ
                 </span>
                 <span className="text-caption text-text-muted">›</span>
               </Link>
             </div>
 
-            {/* Đăng xuất */}
+            {/* Logout button: open Logout overlay ON TOP */}
             <div className="mt-md">
               <Button
                 className="w-full sm:w-auto"
                 onClick={() => {
-                  closeAccount();
-                  router.push("/logout");
+                  // Keep Account open; show Logout overlay above it
+                  openLogout();
                 }}
               >
                 Đăng xuất
