@@ -38,3 +38,4 @@ android/build/
 prisma/prisma/dev.db
 prisma/*.db
 *.db
+prisma/dev.db
