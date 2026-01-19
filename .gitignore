@@ -34,3 +34,7 @@ android/local.properties
 android/app/build/
 android/build/
 *.keystore
+# prisma local db
+prisma/prisma/dev.db
+prisma/*.db
+*.db
