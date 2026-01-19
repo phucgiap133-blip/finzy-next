@@ -2,9 +2,7 @@
 import { useState } from "react";
 
 type ToggleProps = {
-  /** Controlled value (ưu tiên nếu truyền vào) */
   checked?: boolean;
-  /** Uncontrolled mặc định ban đầu */
   defaultChecked?: boolean;
   disabled?: boolean;
   onChange?: (value: boolean) => void;

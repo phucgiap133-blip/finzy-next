@@ -1,84 +1,56 @@
-import { NextResponse, NextRequest } from "next/server";
+// src/lib/idempotency.ts
 import { prisma } from "@/server/prisma";
-import { ApiError } from "@/lib/utils";
+import { jsonOk } from "./route-helpers";
 
-const IDEMPOTENCY_TTL_MINUTES = 24 * 60;
-const PROCESSING_STATUS = 102; // dùng như “đang xử lý”
+const IDEM_TTL_MS = 5 * 60_000; // 5 phút
 
-/**
- * Kiểm tra & ghi nhận Idempotency Key
- */
-export async function idempotencyGuard(
-  req: NextRequest,
-  routePath: string
-): Promise<NextResponse | string> {
-  const key = req.headers.get("Idempotency-Key");
-  if (!key) throw new ApiError("Header 'Idempotency-Key' là bắt buộc.", 400);
+export async function idempotencyGuard(req: Request, endpoint: string) {
+  const key = req.headers.get("Idempotency-Key") || req.headers.get("x-idempotency-key");
+  if (!key) return crypto.randomUUID(); // tự sinh key nếu client không gửi
 
+  const rec = await prisma.idempotencyRecord.findUnique({ where: { idempotencyKey: key } });
   const now = new Date();
 
-  const existing = await prisma.idempotencyRecord.findUnique({
-    where: { idempotencyKey: key },
-    select: {
-      idempotencyKey: true,
-      expireAt: true,
-      responseStatus: true,
-      responseBody: true,
-    },
-  });
-
-  if (existing && existing.expireAt > now) {
-    // còn hạn
-    if (existing.responseStatus !== PROCESSING_STATUS && existing.responseBody) {
-      // Đã hoàn thành -> trả kết quả cache
-      return new NextResponse(existing.responseBody, {
-        status: existing.responseStatus ?? 200,
-        headers: {
-          "Content-Type": "application/json",
-          "X-Idempotency-Status": "COMPLETED",
-        },
-      });
-    }
-    // Đang xử lý
-    throw new ApiError("Yêu cầu đang được xử lý. Vui lòng không gửi trùng lặp.", 409);
+  if (!rec) {
+    await prisma.idempotencyRecord.create({
+      data: {
+        idempotencyKey: key,
+        endpoint,
+        expireAt: new Date(Date.now() + IDEM_TTL_MS),
+      },
+    });
+    return key;
   }
 
-  // Không có hoặc đã hết hạn -> upsert record mới ở trạng thái PROCESSING
-  const expiresAt = new Date(Date.now() + IDEMPOTENCY_TTL_MINUTES * 60_000);
+  // nếu có body cached -> trả lại
+  if (rec.responseStatus && rec.responseBody) {
+    return new Response(rec.responseBody, {
+      status: rec.responseStatus,
+      headers: { "content-type": "application/json; charset=utf-8", "x-idempotent-replay": "1" },
+    });
+  }
 
-  await prisma.idempotencyRecord.upsert({
+  // nếu chưa hết hạn nhưng đang xử lý -> 202
+  if (rec.expireAt > now) {
+    return new Response(JSON.stringify({ processing: true }), { status: 202, headers: { "content-type": "application/json" } });
+  }
+
+  // hết hạn -> cho phép xử lý lại
+  await prisma.idempotencyRecord.update({
     where: { idempotencyKey: key },
-    update: {
-      endpoint: routePath,
-      expireAt: expiresAt,
-      responseStatus: PROCESSING_STATUS,
-      responseBody: null,
-    },
-    create: {
-      idempotencyKey: key,
-      endpoint: routePath,
-      expireAt: expiresAt,
-      responseStatus: PROCESSING_STATUS,
-      responseBody: null,
-    },
+    data: { expireAt: new Date(Date.now() + IDEM_TTL_MS), responseBody: null, responseStatus: null },
   });
-
   return key;
 }
 
-/**
- * Đánh dấu hoàn tất & lưu kết quả cho Idempotency Key
- */
-export async function completeIdempotency(
-  idempotencyKey: string,
-  successResponse: any,
-  status = 200
-) {
-  await prisma.idempotencyRecord.update({
-    where: { idempotencyKey },
-    data: {
-      responseStatus: status,
-      responseBody: JSON.stringify(successResponse),
-    },
-  });
+export async function completeIdempotency(key: string, payload: any, status = 200) {
+  try {
+    await prisma.idempotencyRecord.update({
+      where: { idempotencyKey: key },
+      data: { responseBody: JSON.stringify(payload), responseStatus: status },
+    });
+  } catch {
+    // ignore
+  }
+  return jsonOk(payload, status);
 }

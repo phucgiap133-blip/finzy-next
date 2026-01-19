@@ -1,120 +1,181 @@
+// src/components/SideMenu.tsx
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { usePathname } from "next/navigation";
 import { useMenu } from "./MenuProvider";
 
 export default function SideMenu() {
   const { open, closeMenu, openLogout } = useMenu();
+  const pathname = usePathname();
 
-  const [noAnim, setNoAnim] = useState(false);
-  useEffect(() => {
-    let t: number | undefined;
-    const onResize = () => {
-      setNoAnim(true);
-      window.clearTimeout(t);
-      t = window.setTimeout(() => setNoAnim(false), 180);
-    };
-    window.addEventListener("resize", onResize, { passive: true });
-    return () => {
-      window.removeEventListener("resize", onResize);
-      window.clearTimeout(t);
-    };
-  }, []);
+  const isActive = (href: string) =>
+    href === "/" ? pathname === "/" : pathname.startsWith(href);
 
-  return (
-    <>
-      <div
-        onClick={closeMenu}
-        className={[
-          "fixed inset-0 z-[60] bg-black/40 transition-opacity lg:hidden",
-          open
-            ? "opacity-100 pointer-events-auto"
-            : "opacity-0 pointer-events-none",
-        ].join(" ")}
-        aria-hidden={!open}
-      />
-      <aside
-        role="dialog"
-        aria-modal="true"
-        className={[
-          "fixed inset-y-0 left-0 z-[61] h-dvh w-[320px] max-w-[90vw]",
-          "bg-white/95 border border-border rounded-2xl shadow-md",
-          noAnim ? "transition-none" : "transition-transform duration-300",
-          "lg:transition-none",
-        ].join(" ")}
-        style={{
-          left: "var(--container-left, 16px)",
-          transform: open
-            ? "translateX(0)"
-            : "translateX(calc(-100% - var(--container-left, 16px)))",
-          backdropFilter: "saturate(180%) blur(8px)",
-        }}
-      >
-        <div className="p-md flex items-center justify-between">
-          <div className="text-h5 font-bold">Finzy. tech</div>
-          <button
-            onClick={closeMenu}
-            className="w-8 h-8 grid place-items-center rounded-control border border-border"
-            aria-label="Đóng menu"
-          >
-            ×
-          </button>
+  const mainItems = [
+    { href: "/", label: "Trang chủ", icon: "🏠" },
+    { href: "/tasks", label: "Tất cả nhiệm vụ", icon: "🧾" },
+    { href: "/withdraw", label: "Rút tiền", icon: "💰", highlight: true },
+    { href: "/referral", label: "Giới thiệu bạn bè", icon: "➕" },
+    { href: "/community", label: "Cộng đồng", icon: "📨" },
+  ];
+
+  const accountItems = [
+    { href: "/policy", label: "Chính sách", icon: "📄" },
+    { href: "/password/change", label: "Đổi mật khẩu", icon: "🔑" },
+  ];
+
+return (
+  <>
+    {/* Overlay */}
+    <div
+      onClick={closeMenu}
+      className={[
+        "fixed inset-0 z-40 bg-black/40 transition-opacity",
+        open
+          ? "opacity-100 pointer-events-auto"
+          : "opacity-0 pointer-events-none",
+      ].join(" ")}
+    />
+
+    {/* MENU CONTAINER */}
+    <aside
+      role="dialog"
+      aria-modal="true"
+      className={[
+        "fixed z-50",
+        "left-[12px] right-[12px]",
+        "w-auto max-w-[300px]",
+        "rounded-[24px] bg-[#FAFAFA] border border-[#F2F2F2]",
+        "shadow-[0_18px_40px_rgba(0,0,0,0.10)]",
+        "flex flex-col overflow-hidden",
+        "transition-all duration-300",
+        open
+          ? "translate-y-0 opacity-100"
+          : "-translate-y-3 opacity-0 pointer-events-none",
+      ].join(" ")}
+      style={{
+        top: "calc(var(--safe-top, 0px) / 2 + 80px)",
+        bottom: "24px",
+      }}
+    >
+      {/* HEADER */}
+      <div className="px-3 pt-4 mb-6 flex items-center gap-3 shrink-0">
+        <div className="w-10 h-10 rounded-full bg-white shadow-sm grid place-items-center">
+          <span className="text-[20px] text-[#F2994A] font-bold">∞</span>
+        </div>
+        <div className="text-[17px] font-semibold text-[#3B302A]">
+          Finzy. tech
+        </div>
+      </div>
+
+      {/* BODY */}
+      <nav className="px-3 pb-4 flex-1 finzy-scroll">
+        {/* MAIN MENU — spacing 16px */}
+        <div className="space-y-4">
+          {mainItems.map((i) => {
+            const highlight = !!i.highlight;
+
+            return (
+              <Link
+                key={i.href}
+                href={{ pathname: i.href, query: { src: "menu" } }}
+                prefetch={false}
+                onClick={closeMenu}
+                className={[
+                  "flex items-center justify-between",
+                  "h-[48px] px-3 rounded-[12px]",
+                  "text-[16px] font-semibold",
+                  "shadow-[0_2px_6px_rgba(0,0,0,0.06)]",
+                  highlight
+                    ? "bg-[#F2994A] text-white"
+                    : "bg-[#FEFEFE] text-[#5D4037] hover:bg-[#FFF8F0]",
+                ].join(" ")}
+              >
+                <div className="flex items-center gap-3">
+                  <span className="text-lg">{i.icon}</span>
+                  <span>{i.label}</span>
+                </div>
+
+                {highlight && (
+                  <svg
+                    width="18"
+                    height="18"
+                    viewBox="0 0 18 18"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path
+                      d="M7 4l4 5-4 5"
+                      stroke="white"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                )}
+              </Link>
+            );
+          })}
         </div>
 
-        <nav className="p-md space-y-sm overflow-y-auto">
-          {[
-            { href: "/", label: "Trang chủ" },
-            { href: "/tasks", label: "Tất cả nhiệm vụ" },
-            { href: "/withdraw", label: "Rút tiền" },
-            { href: "/referral", label: "Giới thiệu bạn bè" },
-            { href: "/community", label: "Cộng đồng" },
-          ].map((i) => (
-            <Link
-              key={i.href}
-              href={{ pathname: i.href, query: { src: "menu" } }}
-              onClick={closeMenu}
-              className="block rounded-[14px] border border-border bg-white p-md hover:shadow-sm"
-              prefetch={false}
-            >
-              {i.label}
-            </Link>
-          ))}
-
-          <div className="text-caption text-text-muted px-sm pt-sm">
-            Tài khoản
+        {/* Cộng đồng → Divider: 16px */}
+        <div className="mt-4">
+          {/* DIVIDER — trên/dưới 12px */}
+          <div className="flex items-center gap-3 px-1 mt-3 mb-3 text-[#BDBDBD] text-[12px]">
+            <span className="flex-1 h-px bg-[#E0E0E0]" />
+            <span>Tài khoản</span>
+            <span className="flex-1 h-px bg-[#E0E0E0]" />
           </div>
 
-          <Link
-            href={{ pathname: "/policy", query: { src: "menu" } }}
-            onClick={closeMenu}
-            className="block rounded-[14px] border border-border bg-white p-md hover:shadow-sm"
-            prefetch={false}
-          >
-            Chính sách
-          </Link>
+          {/* ACCOUNT ITEMS — spacing 16px */}
+          <div className="space-y-4">
+            {accountItems.map((i) => (
+              <Link
+                key={i.href}
+                href={i.href}
+                prefetch={false}
+                onClick={closeMenu}
+                className="
+                  flex items-center justify-between
+                  h-[48px] px-3 rounded-[12px]
+                  bg-[#FEFEFE]
+                  shadow-[0_2px_6px_rgba(0,0,0,0.06)]
+                  text-[#5D4037] text-[16px] font-semibold
+                  hover:bg-[#FFF8F0]
+                "
+              >
+                <div className="flex items-center gap-3">
+                  <span className="text-lg">{i.icon}</span>
+                  <span>{i.label}</span>
+                </div>
+              </Link>
+            ))}
 
-          <Link
-            href={{ pathname: "/password/change", query: { src: "menu" } }}
-            onClick={closeMenu}
-            className="block rounded-[14px] border border-border bg-white p-md hover:shadow-sm"
-            prefetch={false}
-          >
-            Đổi mật khẩu
-          </Link>
-
-          <button
-            type="button"
-            onClick={() => {
-              closeMenu();
-              openLogout();
-            }}
-            className="w-full text-left rounded-[14px] border border-border bg-white p-md hover:shadow-sm"
-          >
-            Đăng xuất
-          </button>
-        </nav>
-      </aside>
-    </>
-  );
+            <button
+              type="button"
+              onClick={() => {
+                closeMenu();
+                openLogout();
+              }}
+              className="
+                w-full flex items-center justify-between
+                h-[48px] px-3 rounded-[12px]
+                bg-[#FEFEFE]
+                shadow-[0_2px_6px_rgba(0,0,0,0.06)]
+                text-[#5D4037] text-[16px] font-semibold
+                hover:bg-[#FFF3E0]
+              "
+            >
+              <div className="flex items-center gap-3">
+                <span className="text-lg">↩</span>
+                <span>Đăng xuất</span>
+              </div>
+            </button>
+          </div>
+        </div>
+      </nav>
+    </aside>
+  </>
+);
 }

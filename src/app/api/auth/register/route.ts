@@ -1,67 +1,37 @@
-import { NextResponse, NextRequest } from "next/server";
-import { prisma } from "@/server/prisma"; 
+import { NextRequest } from "next/server";
+import { prisma } from "@/server/prisma";
+import { jsonOk, jsonErr, assertMethod } from "@/lib/route-helpers";
+import { RegisterSchema } from "@/lib/validations";
 import bcrypt from "bcryptjs";
-// ✅ SỬA: Thêm handleApiError vào import
-import { readJsonAndValidate, ApiError, handleApiError } from "@/lib/utils"; 
-import { rateLimitGuard, SENSITIVE_RATE_LIMIT } from "@/lib/ratelimit"; 
-import { PasswordChangeSchema } from "@/lib/validations/auth";
+import { rateLimitGuard, SENSITIVE_RATE_LIMIT } from "@/lib/ratelimit";
+import { logAudit } from "@/server/audit";
 
-/**
- * API POST: Đăng ký tài khoản người dùng mới.
- */
 export async function POST(req: NextRequest) {
-    try {
-        // 1. RATE LIMIT
-        const rateLimitError = await rateLimitGuard(req, SENSITIVE_RATE_LIMIT);
-        if (rateLimitError) {
-            return rateLimitError; 
-        }
-        
-        // 2. VALIDATE DỮ LIỆU ĐẦU VÀO
-        const { email, password } = await readJsonAndValidate(req, RegisterSchema);
-        const safeEmail = email.toLowerCase(); 
-        
-        // 3. KIỂM TRA TỒN TẠI EMAIL
-        const existingUser = await prisma.user.findUnique({ where: { email: safeEmail } });
-        if (existingUser) {
-            throw new ApiError("Email đã được sử dụng.", 409); 
-        }
-        
-        // 4. MÃ HÓA MẬT KHẨU
-        const hashedPassword = await bcrypt.hash(password, 10);
-        
-        // 5. TẠO TÀI KHOẢN VÀ VÍ (TRANSACTION)
-        await prisma.$transaction(async (tx) => {
-            
-            // a) Tạo người dùng
-            const newUser = await tx.user.create({
-                data: {
-                    email: safeEmail,
-                    password: hashedPassword,
-                    // role: 'USER', 
-                }
-            });
-            
-            // b) Tạo ví (Wallet) cho người dùng mới
-            await tx.wallet.create({
-                data: {
-                    userId: newUser.id,
-                    balance: 0, 
-                }
-            });
-            
-            // TODO: Gửi email Chào mừng/Xác minh
-            
-        });
-        
-        // 6. PHẢN HỒI THÀNH CÔNG
-        return NextResponse.json({ 
-            ok: true, 
-            message: "Đăng ký thành công." 
-        }, { status: 201 }); 
-        
-    } catch (e) {
-        // ✅ SỬ DỤNG HÀM TIỆN ÍCH
-        return handleApiError(e);
-    }
+  try {
+    assertMethod(req, ["POST"]);
+    const rl = await rateLimitGuard(req, SENSITIVE_RATE_LIMIT);
+    if (rl) return rl;
+
+    const { email, password } = RegisterSchema.parse(await req.json());
+
+    const existed = await prisma.user.findUnique({ where: { email } });
+    if (existed) return jsonErr("Email đã tồn tại", 409);
+
+    const pwd = await bcrypt.hash(password, 10);
+    const user = await prisma.user.create({
+      data: {
+        email,
+       password: pwd,
+        role: "USER",
+        tokenVersion: 0,
+        wallet: { create: { balance: 0, currency: "VND" } },
+      },
+      select: { id: true, email: true, role: true, createdAt: true },
+    });
+
+    await logAudit(user.id, "REGISTER");
+    return jsonOk({ user });
+  } catch (e: any) {
+    return jsonErr(e?.message || "Bad request", 400);
+  }
 }

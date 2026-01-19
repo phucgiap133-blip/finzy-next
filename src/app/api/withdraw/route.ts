@@ -1,184 +1,118 @@
 // src/app/api/withdraw/route.ts
-import { NextResponse } from "next/server";
+import { NextRequest } from "next/server";
+import { jsonOk, jsonErr, assertMethod } from "@/lib/route-helpers";
+import { idempotencyGuard, completeIdempotency } from "@/lib/idempotency";
+import { rateLimitGuard, SENSITIVE_RATE_LIMIT } from "@/lib/ratelimit";
 import { prisma } from "@/server/prisma";
-import { readJsonAndValidate, ApiError } from "@/lib/utils";
-import { requireRole, isAuthErr } from "@/server/authz";
-import { rateLimit } from "@/lib/ratelimit";
-import { z, ZodError } from "zod";
-import { Prisma, WithdrawalStatus, UserRole } from "@prisma/client";
+import { getUserId } from "@/server/authz";
+import { WithdrawJobData, withdrawQueue } from "@/queues/withdraw.queue";
+import { Prisma } from "@prisma/client";
 import { logAudit } from "@/server/audit";
-import { withdrawQueue, WithdrawJobData } from "@/queues/withdraw.queue";
 
-// SCHEMA (GIỮ NGUYÊN)
-const WithdrawRequestSchema = z.object({
-  amount: z.number().int("Số tiền phải là số nguyên").min(1000, "Tối thiểu 1,000đ"),
-  methodId: z.number().int("ID phương thức phải là số nguyên"),
-  bankAccount: z.string().min(8, "Số tài khoản không hợp lệ"),
-  bankName: z.string().min(3, "Tên ngân hàng không hợp lệ"),
-});
-type WithdrawRequest = z.infer<typeof WithdrawRequestSchema>;
-
-// rate limit window
-const WITHDRAW_LIMIT = 5;
-const WITHDRAW_WINDOW_MS = 60 * 60_000;
-
-export async function POST(req: Request) {
-  const idempotencyKey = req.headers.get("Idempotency-Key") || undefined;
-  let userId = 0;
-  let existingWithdrawal: any = null;
-
+export async function POST(req: NextRequest) {
   try {
-    // ✅ AUTH + RBAC
-    const auth = await requireRole(req, [UserRole.USER, UserRole.ADMIN]);
-    if (isAuthErr(auth)) {
-      const status = auth.code === "UNAUTHORIZED" ? 401 : 403;
-      return NextResponse.json(
-        { error: auth.code === "UNAUTHORIZED" ? "Chưa đăng nhập" : "Bạn không có quyền thực hiện giao dịch này." },
-        { status }
-      );
-    }
-    userId = Number(auth.payload.userId);
+    assertMethod(req, ["POST"]);
 
-    // ✅ A. IDEMPOTENCY CHECK
-    if (idempotencyKey) {
-      existingWithdrawal = await prisma.withdrawal.findUnique({
-        where: { idempotencyKey },
-        select: { id: true, status: true, amount: true },
+    const rl = await rateLimitGuard(req, SENSITIVE_RATE_LIMIT);
+    if (rl) return rl;
+
+    const uid = await getUserId(req);
+    if (!uid) return jsonErr("UNAUTHORIZED", 401);
+
+    const maybe = await idempotencyGuard(req, "/api/withdraw");
+    if (maybe instanceof Response) return maybe;
+    const idemKey = maybe;
+
+    const { amount, methodId } = (await req.json()) as {
+  amount: number;
+  methodId: string | number;
+};
+
+if (!Number.isFinite(amount) || amount <= 0) {
+  throw new Error("Số tiền không hợp lệ");
+}
+
+// id trong Prisma là string → convert về string
+const bankId =
+  typeof methodId === "string" ? methodId : String(methodId || "");
+
+if (!bankId) throw new Error("Thiếu tài khoản nhận");
+
+const [wallet, bank] = await Promise.all([
+  prisma.wallet.findUniqueOrThrow({ where: { userId: uid } }),
+  prisma.bankAccount.findUnique({ where: { id: bankId } }),
+]);
+
+    if (!bank || bank.userId !== uid) throw new Error("Tài khoản ngân hàng không hợp lệ");
+
+    const MIN = 1_000;
+    const MAX = 5_000_000;
+    if (amount < MIN) throw new Error(`Tối thiểu ${MIN.toLocaleString("vi-VN")}đ`);
+    if (amount > MAX) throw new Error(`Tối đa ${MAX.toLocaleString("vi-VN")}đ/ngày`);
+    if (amount % 1000 !== 0) throw new Error("Số tiền phải là bội số 1.000đ");
+    if (wallet.balance.lt(new Prisma.Decimal(amount))) throw new Error("Số dư không đủ");
+
+    const created = await prisma.$transaction(async (tx) => {
+      await tx.wallet.update({
+        where: { userId: uid },
+        data: { balance: { decrement: new Prisma.Decimal(amount) } },
       });
-      if (existingWithdrawal) {
-        await logAudit(
-          userId,
-          "WITHDRAW_IDEMPOTENCY",
-          `Request trùng lặp cho key: ${idempotencyKey}. Trả về giao dịch cũ (ID: ${existingWithdrawal.id}, Status: ${existingWithdrawal.status}).`
-        );
-        return NextResponse.json(
-          {
-            ok: true,
-            message: "Yêu cầu này đã được xử lý trước đó.",
-            id: existingWithdrawal.id,
-            status: existingWithdrawal.status,
-            isIdempotent: true,
-          },
-          { status: 200 }
-        );
-      }
-    }
 
-    // B. RATE LIMIT
-    const rl = rateLimit(`withdraw:${userId}`, WITHDRAW_LIMIT, WITHDRAW_WINDOW_MS);
-    if (!rl.ok) {
-      await logAudit(userId, "WITHDRAW_RATE_LIMIT", `Thất bại: ${rl.retryAfter}s`);
-      return NextResponse.json(
-        { error: `Quá nhiều yêu cầu rút tiền, thử lại sau ${rl.retryAfter}s` },
-        { status: 429 }
-      );
-    }
-
-    // C. VALIDATE BODY
-    const { amount, methodId, bankAccount, bankName } =
-      (await readJsonAndValidate(req, WithdrawRequestSchema)) as WithdrawRequest;
-
-    // D. KIỂM TRA SỐ DƯ
-    const wallet = await prisma.wallet.findUnique({ where: { userId } });
-    if (!wallet) {
-      await logAudit(userId, "WITHDRAW_FAIL_BALANCE", "Thất bại, không tìm thấy ví");
-      throw new ApiError("Không tìm thấy ví", 404);
-    }
-    const balance = wallet.balance as unknown as Prisma.Decimal;
-    const want = new Prisma.Decimal(amount);
-    if (balance.lt(want)) {
-      await logAudit(
-        userId,
-        "WITHDRAW_FAIL_BALANCE",
-        `Thất bại, số dư: ${balance.toString()} < ${want.toString()}`
-      );
-      throw new ApiError("Số dư không đủ để thực hiện giao dịch này.", 400);
-    }
-
-    // E. GIAO DỊCH (lưu idempotencyKey)
-    let newWithdrawalId = 0;
-    await prisma.$transaction(async (tx) => {
-      await tx.wallet.update({ where: { userId }, data: { balance: { decrement: want } } });
-      const newWithdrawal = await tx.withdrawal.create({
+      const w = await tx.withdrawal.create({
         data: {
-          userId,
-          amount: want,
-          fee: new Prisma.Decimal(0),
-          status: WithdrawalStatus.QUEUED,
-          method: String(methodId),
-          idempotencyKey,
+          userId: uid,
+          amount: new Prisma.Decimal(amount),
+          status: "QUEUED",
+          method: bank.bankName,
+          idempotencyKey: idemKey,
         },
-        select: { id: true },
+        select: { id: true, createdAt: true },
       });
-      newWithdrawalId = newWithdrawal.id;
+
+      await tx.walletHistory.create({
+        data: {
+          userId: uid,
+          text: `Tạo lệnh rút -${amount.toLocaleString("vi-VN")}đ`,
+          sub: bank.bankName,
+          amount: new Prisma.Decimal(-amount),
+        },
+      });
+
+      return w;
     });
 
-    // F. ĐẨY JOB VÀO QUEUE
-    const jobData: WithdrawJobData = {
-      userId: String(userId),
+    await logAudit(uid, "WITHDRAWAL_REQUEST", `${amount} VND → ${bank.bankName}`);
+
+    // Mask số tài khoản từ field 'number'
+    const rawNumber = (bank as any).number as string | undefined;
+    const last4 = rawNumber ? rawNumber.slice(-4) : "****";
+    const masked = rawNumber ? `****${last4}` : "****";
+
+    if (withdrawQueue) {
+      await withdrawQueue.add(
+        "withdraw",
+        {
+          userId: String(uid),
+          amount,
+          bankAccount: masked,
+          bankName: bank.bankName,
+          idempotencyKey: idemKey,
+        } satisfies WithdrawJobData,
+      );
+    } else {
+      console.warn(`[Withdraw] Queue disabled. Job for UID ${uid} was NOT enqueued.`);
+    }
+
+    const payload = {
+      id: created.id,
       amount,
-      bankAccount,
-      bankName,
-      idempotencyKey: idempotencyKey || String(newWithdrawalId),
+      status: "queued" as const,
+      createdAt: created.createdAt,
     };
-    const job = await withdrawQueue.add("processWithdrawal", jobData, {
-      jobId: idempotencyKey || String(newWithdrawalId),
-    });
 
-    await logAudit(
-      userId,
-      "WITHDRAWAL_QUEUED",
-      `Yêu cầu: ${want.toString()} VND (ID: ${newWithdrawalId}). Đẩy vào Queue.`
-    );
-
-    return NextResponse.json(
-      {
-        ok: true,
-        id: newWithdrawalId,
-        status: WithdrawalStatus.QUEUED,
-        message: "Yêu cầu rút tiền đã được ghi nhận và đang chờ xử lý.",
-        jobId: job.id,
-      },
-      { status: 202 }
-    );
+    await completeIdempotency(idemKey, payload, 200);
+    return jsonOk(payload);
   } catch (e: any) {
-    // 1) Body không hợp lệ
-    if (e instanceof ZodError) {
-      return NextResponse.json(
-        { ok: false, error: e.issues?.[0]?.message || "Dữ liệu không hợp lệ" },
-        { status: 400 }
-      );
-    }
-
-    // 2) Auth errors
-    if (e?.message === "UNAUTHORIZED") {
-      return NextResponse.json({ error: "Chưa đăng nhập" }, { status: 401 });
-    }
-    if (e?.message === "FORBIDDEN") {
-      if (userId) await logAudit(userId, "WITHDRAW_FAIL_RBAC", "Từ chối quyền. Vai trò không hợp lệ.");
-      return NextResponse.json(
-        { error: "Bạn không có quyền thực hiện giao dịch này." },
-        { status: 403 }
-      );
-    }
-
-    // 3) Idempotency trùng
-    if (e?.code === "P2002" && idempotencyKey) {
-      if (userId) await logAudit(userId, "WITHDRAW_IDEMPOTENCY_FAIL", `Trùng key: ${idempotencyKey}`);
-      return NextResponse.json(
-        { error: "Yêu cầu đang được xử lý hoặc đã hoàn tất." },
-        { status: 409 }
-      );
-    }
-
-    // 4) Lỗi nghiệp vụ
-    if (e instanceof ApiError) {
-      if (userId) await logAudit(userId, "WITHDRAW_FAIL", e.message);
-      return NextResponse.json({ error: e.message }, { status: e.status });
-    }
-
-    // 5) Fallback
-    console.error("[withdraw] UNHANDLED error:", e);
-    return NextResponse.json({ error: "Lỗi hệ thống không xác định" }, { status: 500 });
+    return jsonErr(e?.message || "Internal error", 400);
   }
 }

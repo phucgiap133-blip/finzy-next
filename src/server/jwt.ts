@@ -1,51 +1,20 @@
 // src/server/jwt.ts
-import jwt from 'jsonwebtoken';
-import { UserRole } from '@prisma/client';
+import jwt from "jsonwebtoken";
 
-// Định nghĩa payload đã sửa
-export interface JwtPayload {
-  userId: number;
-  role: UserRole;
-  tokenVersion?: number; // ⬅️ optional
+const ACCESS_SECRET  = process.env.ACCESS_SECRET  || "dev-access";
+const REFRESH_SECRET = process.env.REFRESH_SECRET || "dev-refresh";
+
+type Payload = { userId: number; role: "USER"|"ADMIN"; tokenVersion?: number };
+
+export function createAccessToken(p: Payload) {
+  return jwt.sign(p, ACCESS_SECRET, { expiresIn: "15m" });
 }
-// Cấu hình thời gian sống
-const ACCESS_TOKEN_EXPIRY = '15m'; // 15 phút
-const REFRESH_TOKEN_EXPIRY = '7d';  // 7 ngày
-
-// Đảm bảo biến môi trường đã được thêm vào file .env
-const ACCESS_SECRET = process.env.JWT_ACCESS_SECRET!;
-const REFRESH_SECRET = process.env.JWT_REFRESH_SECRET!;
-
-// ----------------------------------------------------
-// A. TẠO TOKEN
-// ----------------------------------------------------
-
-export function createAccessToken(payload: JwtPayload): string {
-    return jwt.sign(payload, ACCESS_SECRET, { expiresIn: ACCESS_TOKEN_EXPIRY });
+export function createRefreshToken(p: Payload) {
+  return jwt.sign(p, REFRESH_SECRET, { expiresIn: "7d" });
 }
-
-export function createRefreshToken(payload: JwtPayload): string {
-    return jwt.sign(payload, REFRESH_SECRET, { expiresIn: REFRESH_TOKEN_EXPIRY });
+export function verifyAccessToken(token: string) {
+  try { return jwt.verify(token, ACCESS_SECRET) as Payload; } catch { return null; }
 }
-
-// ----------------------------------------------------
-// B. XÁC THỰC TOKEN
-// ----------------------------------------------------
-
-export function verifyAccessToken(token: string): JwtPayload | null {
-    try {
-        const payload = jwt.verify(token, ACCESS_SECRET) as JwtPayload;
-        return payload;
-    } catch (error) {
-        return null;
-    }
-}
-
-export function verifyRefreshToken(token: string): JwtPayload | null {
-    try {
-        const payload = jwt.verify(token, REFRESH_SECRET) as JwtPayload;
-        return payload;
-    } catch (error) {
-        return null;
-    }
+export function verifyRefreshToken(token: string) {
+  try { return jwt.verify(token, REFRESH_SECRET) as Payload; } catch { return null; }
 }

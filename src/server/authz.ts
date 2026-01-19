@@ -1,96 +1,35 @@
 // src/server/authz.ts
 import { cookies, headers } from "next/headers";
-import { verifyAccessToken } from "@/server/jwt";
-import type { JwtPayload } from "@/server/jwt";
-import { UserRole } from "@prisma/client";
-import { NextResponse } from "next/server";
 
-export type AuthResult =
-  | { ok: true; payload: JwtPayload }
-  | { ok: false; code: "UNAUTHORIZED" | "FORBIDDEN" };
+export type Role = "USER" | "ADMIN";
 
-  
-// ---------------------------
-// Helpers cho Route Handlers (có req)
-// ---------------------------
-function readBearer(req: Request) {
-  const h = req.headers.get("authorization") || req.headers.get("Authorization") || "";
-  const m = h.match(/^Bearer\s+(.+)$/i);
-  return m?.[1] || null;
-}
-function readCookie() {
-  return (
-    cookies().get("accessToken")?.value ||
-    cookies().get("access_token")?.value ||
-    null
-  );
+/** Lấy userId: demo lấy từ header `x-user-id`, fallback 1 */
+export async function getUserId(req?: Request): Promise<number | null> {
+  try {
+    const h = req ? req.headers : (await headers());
+    const raw = h.get("x-user-id") ?? cookies().get("uid")?.value;
+    const n = raw ? Number(raw) : 1;
+    return Number.isFinite(n) ? n : null;
+  } catch {
+    return 1; // dev fallback
+  }
 }
 
-/** Lấy payload từ JWT (null nếu không hợp lệ/hết hạn) */
-export async function getAuthPayload(req: Request): Promise<JwtPayload | null> {
-  const token = readBearer(req) || readCookie();
-  if (!token) return null;
-  return verifyAccessToken(token);
+/** Suy luận role: header Authorization: Bearer <token> hoặc cookie `role`  */
+export async function getUserRole(req?: Request): Promise<Role | null> {
+  const h = req ? req.headers : (await headers());
+  const auth = h.get("authorization") || "";
+  const token = auth.startsWith("Bearer ") ? auth.slice(7) : null;
+  const cookieRole = cookies().get("role")?.value?.toUpperCase();
+
+  if (token === "admin" || cookieRole === "ADMIN") return "ADMIN";
+  if (token === "user" || cookieRole === "USER") return "USER";
+  // dev mặc định coi là USER (đừng để trống nếu bạn muốn siết chặt)
+  return "USER";
 }
 
-/** Trả userId hoặc null (Route Handler) */
-export async function getUserId(req: Request): Promise<number | null> {
-  const p = await getAuthPayload(req);
-  return p?.userId ?? null;
-}
-
-/** Trả role hoặc null (Route Handler) */
-export async function getUserRole(req: Request): Promise<UserRole | null> {
-  const p = await getAuthPayload(req);
-  return p?.role ?? null;
-}
-
-/** RBAC: yêu cầu 1 trong các vai trò (Route Handler) */
-export async function requireRole(req: Request, allowed: UserRole[]): Promise<AuthResult> {
-  const payload = await getAuthPayload(req);
-  if (!payload) return { ok: false, code: "UNAUTHORIZED" };
-  if (!allowed.includes(payload.role)) return { ok: false, code: "FORBIDDEN" };
-  return { ok: true, payload };
-}
-
-/** Chỉ ADMIN (Route Handler) */
-export async function requireAdmin(req: Request): Promise<AuthResult> {
-  return requireRole(req, [UserRole.ADMIN]);
-}
-
-/** Type guards để TS narrow đúng kiểu */
-export function isAuthErr(a: AuthResult): a is { ok: false; code: "UNAUTHORIZED" | "FORBIDDEN" } {
-  return a.ok === false;
-}
-export function isAuthOk(a: AuthResult): a is { ok: true; payload: JwtPayload } {
-  return a.ok === true;
-}
-
-// ---------------------------
-// Helpers cho Server Components / Layout (không có req)
-// ---------------------------
-function readBearerFromHeaders() {
-  const h = headers();
-  const v = h.get("authorization") || h.get("Authorization") || "";
-  const m = v.match(/^Bearer\s+(.+)$/i);
-  return m?.[1] || null;
-}
-
-async function getPayloadFromContext(): Promise<JwtPayload | null> {
-  const token = readBearerFromHeaders() || readCookie();
-  if (!token) return null;
-  return verifyAccessToken(token);
-}
-
-/** Trả role hiện tại trong Server Component/Layout */
-export async function getUserRoleFromContext(): Promise<UserRole | null> {
-  const p = await getPayloadFromContext();
-  return p?.role ?? null;
-}
-
-/** Dùng trong layout.tsx/page server-side: ném lỗi nếu không phải ADMIN */
-export async function assertAdmin(): Promise<void> {
-  const p = await getPayloadFromContext();
-  if (!p) throw new Error("UNAUTHORIZED");
-  if (p.role !== UserRole.ADMIN) throw new Error("FORBIDDEN");
+/** Bắt buộc ADMIN, ném lỗi nếu không phải */
+export async function assertAdmin(req?: Request): Promise<void> {
+  const role = await getUserRole(req);
+  if (role !== "ADMIN") throw new Error("UNAUTHORIZED");
 }

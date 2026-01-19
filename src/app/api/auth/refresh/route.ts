@@ -1,58 +1,34 @@
-import { NextResponse } from "next/server";
-import { cookies } from 'next/headers';
-import { serialize } from 'cookie';
-import { verifyRefreshToken, createAccessToken } from "@/server/jwt";
-import { prisma } from "@/server/prisma"; // ✅ Import prisma
-import { logAudit } from "@/server/audit";
+// src/app/api/auth/refresh/route.ts
+import { NextRequest } from "next/server";
+import { jsonOk, jsonErr } from "@/lib/route-helpers";
+import { prisma } from "@/server/prisma";
+import { verifyRefreshToken, createAccessToken, createRefreshToken, type Payload } from "@/lib/jwt";
 
-export async function POST(req: Request) {
-    const cookieStore = cookies();
-    const refreshToken = cookieStore.get('refreshToken')?.value;
+export async function POST(req: NextRequest) {
+  try {
+    const { refresh } = await req.json();
+    const token = verifyRefreshToken(refresh);
+    if (!token) return jsonErr("INVALID_REFRESH", 401);
 
-    if (!refreshToken) {
-        return NextResponse.json({ error: "Refresh Token không tồn tại." }, { status: 401 });
+    const db = await prisma.user.findUnique({ where: { id: token.userId } });
+    if (!db) return jsonErr("USER_NOT_FOUND", 404);
+    if ((db.tokenVersion ?? 0) !== (token.tokenVersion ?? 0)) {
+      return jsonErr("TOKEN_VERSION_MISMATCH", 401);
     }
 
-    const payload = verifyRefreshToken(refreshToken);
-    
-    if (!payload) {
-        return NextResponse.json({ error: "Phiên đã hết hạn." }, { status: 401 });
-    }
+    const role = db.role === "ADMIN" ? "ADMIN" : "USER";
+    const nextPayload: Payload = {
+      userId: db.id,
+      role,
+      tokenVersion: db.tokenVersion ?? 0,
+      email: db.email,
+    };
 
-    // ✅ KIỂM TRA REVOCATION (tokenVersion)
-    const user = await prisma.user.findUnique({
-        where: { id: payload.userId },
-        select: { tokenVersion: true }
-    });
+    const access  = createAccessToken(nextPayload);
+    const refresh2 = createRefreshToken(nextPayload);
 
-    if (!user || user.tokenVersion !== payload.tokenVersion) {
-        // Nếu tokenVersion trong DB đã được cập nhật (do user logout/đổi pass)
-        await logAudit(payload.userId, "AUTH_REVOKED", "Refresh Token bị thu hồi (tokenVersion không khớp).");
-        return NextResponse.json({ error: "Phiên đã bị thu hồi. Vui lòng đăng nhập lại." }, { status: 401 });
-    }
-    
-    // 3. Tạo Access Token Mới
-    // Sử dụng payload hiện tại (đã bao gồm tokenVersion mới nhất)
-    const newAccessToken = createAccessToken(payload); 
-
-    // 4. Cấu hình Cookie Access Token Mới (15 phút)
-    const accessCookie = serialize('accessToken', newAccessToken, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'strict',
-        maxAge: 15 * 60, 
-        path: '/',
-    });
-
-    await logAudit(payload.userId, "AUTH_REFRESH", `Làm mới Access Token thành công.`);
-
-    const response = NextResponse.json({
-        ok: true,
-        message: "Access Token đã được làm mới.",
-        user: { id: payload.userId, role: payload.role }
-    });
-
-    response.headers.set('Set-Cookie', accessCookie);
-
-    return response;
+    return jsonOk({ access, refresh: refresh2 });
+  } catch (e: any) {
+    return jsonErr(e?.message || "Internal error", 400);
+  }
 }

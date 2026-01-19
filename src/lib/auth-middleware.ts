@@ -1,24 +1,18 @@
-import { NextResponse } from "next/server";
-import { verifyJwt, JwtPayload } from "@/lib/jwt";
-import { ApiError } from "@/lib/utils";
+// src/lib/auth-middleware.ts
+import { verifyAccessToken, type Payload } from "@/lib/jwt";
 
 /**
- * Lấy JWT từ Header Authorization và xác minh nó.
+ * Xác thực từ header Authorization: Bearer <access_token>
+ * Trả về Payload nếu hợp lệ, ném lỗi nếu không.
  */
-// PHẢI CÓ từ khóa 'export'
-export function assertAuth(req: Request): JwtPayload {
-    const authHeader = req.headers.get("authorization");
-    const token = authHeader?.startsWith("Bearer ") ? authHeader.substring(7) : null;
+export function assertAuth(req: Request): Payload {
+  const auth = req.headers.get("authorization") || "";
+  const token = auth.startsWith("Bearer ") ? auth.slice(7) : null;
+  const payload = token ? verifyAccessToken(token) : null;
 
-    if (!token) {
-        throw new ApiError("Chưa đăng nhập", 401);
-    }
-
-    const payload = verifyJwt(token);
-
-    if (!payload) {
-        throw new ApiError("Token không hợp lệ hoặc đã hết hạn", 401);
-    }
-    
-    return payload;
+  if (!payload) {
+    // tuỳ trường hợp bạn có thể return Response.json(..., {status:401})
+    throw new Error("UNAUTHORIZED");
+  }
+  return payload;
 }

@@ -1,53 +1,41 @@
-import { NextResponse } from "next/server";
+import { NextRequest } from "next/server";
+import { jsonOk, jsonErr, assertMethod } from "@/lib/route-helpers";
+import { ForgotSendOtpSchema } from "@/lib/validations";
 import { prisma } from "@/server/prisma";
-import { generate6Digits, minutesFromNow, hashOtp, ApiError, readJsonAndValidate } from "@/lib/utils";
-import { rateLimit } from "@/lib/ratelimit";
-import { PasswordChangeSchema } from "@/lib/validations/auth";
-import { sendMail, buildOTPEmail } from "@/lib/mailer";
+import { rateLimitGuard, SENSITIVE_RATE_LIMIT } from "@/lib/ratelimit";
+import { buildOTPEmail, sendMail } from "@/lib/mailer";
+import { generate6Digits, hashOtp, minutesFromNow } from "@/lib/utils";
 
-const SEND_LIMIT = 5;
-const SEND_WINDOW_MS = 10 * 60_000;
-
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
   try {
-    const { email } = await readJsonAndValidate(req, ForgotSendOtpSchema);
-    const safeEmail = email;
+    assertMethod(req, ["POST"]);
+    const rl = await rateLimitGuard(req, SENSITIVE_RATE_LIMIT);
+    if (rl) return rl;
 
-    const rl = rateLimit(`send-otp:${safeEmail}`, SEND_LIMIT, SEND_WINDOW_MS);
-    if (!rl.ok) {
-      return NextResponse.json(
-        { error: `Quá nhiều yêu cầu, thử lại sau ${rl.retryAfter}s` },
-        { status: 429 },
-      );
-    }
-
-    const user = await prisma.user.findUnique({ where: { email: safeEmail } });
-    if (!user) {
-      return NextResponse.json({ ok: true }); // tránh dò tài khoản
-    }
+    const { email } = ForgotSendOtpSchema.parse(await req.json());
+    // Luôn trả ok để tránh user enumeration
+    const user = await prisma.user.findUnique({ where: { email }, select: { id: true } });
+    if (!user) return jsonOk({ ok: true });
 
     const code = generate6Digits();
-    const hashedCode = await hashOtp(code);
+    const hashed = await hashOtp(code);
 
     await prisma.otpRequest.create({
       data: {
         userId: user.id,
-        email: safeEmail,
-        code: hashedCode,
+        email,
+        codeHash: hashed,
         expireAt: minutesFromNow(5),
-        purpose: "reset_password", // ✅ snake_case đúng theo schema
+        verified: false,
+        type: "RESET_PASSWORD",
       },
     });
 
-    const mailContent = buildOTPEmail(code);
-    await sendMail(safeEmail, mailContent.subject, mailContent.text, mailContent.html);
+    const { subject, text, html } = buildOTPEmail(code);
+    await sendMail(email, subject, text, html);
 
-    return NextResponse.json({ ok: true });
+    return jsonOk({ ok: true });
   } catch (e: any) {
-    if (e instanceof ApiError) {
-      return NextResponse.json({ error: e.message }, { status: e.status });
-    }
-    console.error("[send-otp] UNHANDLED error:", e);
-    return NextResponse.json({ error: "Lỗi hệ thống không xác định" }, { status: 500 });
+    return jsonErr(e?.message || "Bad request", 400);
   }
 }

@@ -35,22 +35,9 @@ export default function ListItem({
       {icon && <span className="shrink-0">{icon}</span>}
 
       <div className="min-w-0">
-        <div
-          className={["truncate text-body font-medium", titleClassName].join(
-            " ",
-          )}
-        >
-          {title}
-        </div>
+        <div className={["truncate text-body font-medium", titleClassName].join(" ")}>{title}</div>
         {subtitle && (
-          <div
-            className={[
-              "truncate text-caption text-text-muted",
-              subtitleClassName,
-            ].join(" ")}
-          >
-            {subtitle}
-          </div>
+          <div className={["truncate text-caption text-text-muted", subtitleClassName].join(" ")}>{subtitle}</div>
         )}
       </div>
 

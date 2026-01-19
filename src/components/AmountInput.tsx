@@ -1,5 +1,4 @@
 "use client";
-
 import { useEffect, useMemo, useState } from "react";
 
 const onlyDigits = (s: string) => (s || "").replace(/\D/g, "");
@@ -28,7 +27,6 @@ export default function AmountInput({
   const [raw, setRaw] = useState<string>(value ? String(value) : "");
   const [hasEdited, setHasEdited] = useState(false);
 
-  // ✅ chỉ đồng bộ khi parent reset value về 0 (sau khi rút tiền)
   useEffect(() => {
     if (!hasEdited && !value) setRaw("");
   }, [value, hasEdited]);
@@ -44,12 +42,9 @@ export default function AmountInput({
 
   const numericRaw = useMemo(() => Number(onlyDigits(raw)) || 0, [raw]);
 
-  // ✅ Gợi ý động
   const suggestions = useMemo(() => {
     if (!numericRaw)
-      return fallbackSuggestions
-        .filter((v) => v >= min && v <= max)
-        .slice(0, 3);
+      return fallbackSuggestions.filter((v) => v >= min && v <= max).slice(0, 3);
     const bases = [10_000, 100_000, 1_000_000];
     return bases.map((f) => numericRaw * f).filter((v) => v >= min && v <= max);
   }, [numericRaw, min, max, fallbackSuggestions]);
@@ -103,9 +98,7 @@ export default function AmountInput({
           className="w-full border border-border rounded-control px-md py-sm pr-14 text-body
                      [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
         />
-        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-caption text-text-muted">
-          VND
-        </span>
+        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-caption text-text-muted">VND</span>
       </div>
     </div>
   );

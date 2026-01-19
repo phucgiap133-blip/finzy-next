@@ -1,11 +1,12 @@
-// src/app/banks/select/page.tsx
 "use client";
+export const dynamic = "force-dynamic";
 
 import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
-import Header from "../../../components/Header";
-import Card from "../../../components/Card";
-import PageContainer from "../../../components/PageContainer";
+import Header from "@/components/Header";
+import Card from "@/components/Card";
+import PageContainer from "@/components/PageContainer";
+import Image from "next/image";
 
 type Bank = { code: string; name: string; logo: string };
 
@@ -35,34 +36,24 @@ const BANKS: Bank[] = [
   { code: "MSB", name: "Maritime Bank", logo: "https://logo.clearbit.com/msb.com.vn" },
   { code: "ABB", name: "ABBANK", logo: "https://logo.clearbit.com/abbank.vn" },
   { code: "HDB", name: "HDBank", logo: "https://logo.clearbit.com/hdbank.com.vn" },
-  // Ví điện tử
   { code: "MOMO", name: "MoMo", logo: "https://logo.clearbit.com/momo.vn" },
   { code: "ZLP", name: "ZaloPay", logo: "https://logo.clearbit.com/zalopay.vn" },
 ];
 
 const norm = (s: string) =>
-  (s || "")
-    .toString()
-    .trim()
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/\s+/g, " ");
+  (s || "").toString().trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, " ");
 
-export default function SelectBankPage() {
+export default function SelectBankClient() {
   const router = useRouter();
   const [query, setQuery] = useState<string>("");
 
   const filtered = useMemo<Bank[]>(() => {
     const q = norm(query);
     if (!q) return BANKS;
-    return BANKS.filter(
-      (b) => norm(b.name).includes(q) || norm(b.code).includes(q),
-    );
+    return BANKS.filter((b) => norm(b.name).includes(q) || norm(b.code).includes(q));
   }, [query]);
 
   const pick = (b: Bank) => {
-    // Điều hướng sang trang thêm ngân hàng và điền sẵn tên dạng "MB Bank (MBB)"
     const bankName = `${b.name} (${b.code})`;
     router.push(`/banks/add?bank=${encodeURIComponent(bankName)}`);
   };
@@ -81,9 +72,7 @@ export default function SelectBankPage() {
             aria-label="Tìm ngân hàng"
           />
 
-          <div className="text-caption text-text-muted mb-sm">
-            Tìm thấy {filtered.length} ngân hàng
-          </div>
+          <div className="text-caption text-text-muted mb-sm">Tìm thấy {filtered.length} ngân hàng</div>
 
           <div className="divide-y divide-border">
             {filtered.map((b) => (
@@ -92,13 +81,12 @@ export default function SelectBankPage() {
                 className="w-full flex items-center gap-sm py-sm hover:bg-[color:#FAFAFA] text-left"
                 onClick={() => pick(b)}
               >
-                <img
+                <Image
                   src={b.logo}
-                  alt={b.name}
-                  className="w-8 h-8 rounded-full object-cover"
-                  onError={(e) => {
-                    (e.currentTarget as HTMLImageElement).style.display = "none";
-                  }}
+                  alt={b.name || "Logo ngân hàng"}
+                  width={32}
+                  height={32}
+                  className="rounded-full object-cover"
                 />
                 <div className="flex-1">
                   <div className="text-body font-medium">{b.name}</div>

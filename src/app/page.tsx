@@ -6,96 +6,162 @@ import Card from "@/components/Card";
 import PageContainer from "@/components/PageContainer";
 import MenuButton from "@/components/MenuButton";
 import { useMenu } from "@/components/MenuProvider";
+import { markForwardNavigation } from "@/lib/navigation-intent";
 
-export default function Page() {
-  const { openAccount } = useMenu();
+export default function HomePage() {
+  const { openMenu, openAccount } = useMenu();
 
   return (
-    <>
-      <PageContainer id="app-container" className="space-y-md lg:space-y-lg">
-        {/* Top bar */}
-        <div className="flex items-center justify-between">
-          <MenuButton className="inline-flex items-center justify-center w-9 h-9 rounded-control border border-border hover:shadow-sm" />
+    <PageContainer id="app-container" className="flex justify-center">
+      <div className="w-full max-w-[420px] pb-12 px-[12px]">
+        {/* HEADER – H = 72px */}
+        <header
+  className="
+    pt-safe-top          /* 👈 bù safe-area iPhone */
+    h-[56px]             /* 👈 header thực = 56px */
+    flex items-center justify-between
+  "
+>
+  <MenuButton
+    onClick={openMenu}
+    className="w-11 h-11 rounded-full text-[#111827] hover:bg-black/5"
+  />
 
-          <div className="font-bold text-h5 md:text-h4">Trang chủ</div>
+  <h1 className="text-[18px] leading-[24px] font-semibold tracking-[0.01em]">
+    Trang chủ
+  </h1>
 
-          <button
-            type="button"
-            onClick={openAccount}
-            aria-label="Tài khoản"
-            className="rounded-full w-8 h-8 border border-border grid place-items-center hover:shadow-sm"
-          >
-            <span className="text-brand-primary font-bold">∞</span>
-          </button>
-        </div>
+  <button
+    type="button"
+    onClick={openAccount}
+    aria-label="Tài khoản"
+    className="w-11 h-11 rounded-full border border-border bg-bg-card shadow-[0_8px_20px_rgba(0,0,0,0.06)] grid place-items-center"
+  >
+    <span className="text-[20px] text-brand-primary font-bold">∞</span>
+  </button>
+</header>
+        {/* HERO CARD – cách header 24px */}
+        <Card
+  id="hero-card"
+  className="
+    mt-6        /* 24px -> đúng spec cách header 24 */
+    rounded-[24px]
+    border border-[#F2F2F2]
+    bg-bg-card
+    shadow-[0_18px_40px_rgba(0,0,0,0.10)]
+    px-6 pt-6 pb-6
+  "
+>
 
-        {/* Card tổng thu nhập */}
-        <Card id="hero-card">
-          <div className="text-center space-y-xs">
-            <div className="text-body-sm text-text-muted uppercase tracking-wide">
+          <div className="text-center">
+            {/* Label */}
+            <div
+              id="income-title"
+              className="
+                uppercase tracking-[0.08em]
+                text-[14px] font-semibold text-[#4B4B4B]
+              "
+            >
               TỔNG THU NHẬP
             </div>
-            <div className="text-stat lg:text-h2 font-extrabold">37.000đ</div>
-            <div className="text-body text-text-muted">
+
+            {/* Số tiền */}
+            <div className="mt-2 text-[20px] leading-[24px] font-bold text-[#222222]">
+              37.000đ
+            </div>
+
+            {/* Dòng phụ */}
+            <div className="mt-1 text-[14px] leading-[20px] text-[#7A7A7A]">
               Rút tối thiểu 20.000đ
             </div>
-            <div className="mt-md">
-              {/* ✅ thêm from=home để trang rút tiền biết quay lại home */}
-              <Link href="/withdraw?from=home">
-                <Button className="w-full sm:w-auto text-btn lg:text-body font-semibold px-6 py-2">
-                  Rút tiền ngay
-                </Button>
-              </Link>
-            </div>
+
+{/* Nút primary */}
+<div className="mt-3">
+  <Link href="/withdraw?from=home" onClick={() => markForwardNavigation()}>
+    <Button
+      className="
+        w-full h-[48px] px-4
+        rounded-[12px]
+        text-[16px] leading-[20px] font-semibold
+        bg-[#F2994A] hover:bg-[#EA8A2F]
+        text-[#FFFFFF]
+        shadow-[0_8px_18px_rgba(242,153,74,0.45)]
+        border border-[#F2994A]
+        flex items-center justify-center
+      "
+    >
+      <span>Rút tiền ngay</span>
+    </Button>
+  </Link>
+</div>
+
+
           </div>
         </Card>
 
-        {/* Section: Nhiệm vụ hôm nay */}
-        <section className="mt-md lg:mt-lg">
-          <div className="flex items-center justify-between mb-sm">
-            <div className="text-h6 md:text-h5 font-semibold uppercase">
+        {/* NHIỆM VỤ HÔM NAY */}
+        <section className="mt-10" aria-labelledby="today-tasks">
+          <div className="flex items-center justify-between mb-4">
+            <h2
+              id="today-tasks"
+              className="uppercase text-[14px] leading-[20px] font-semibold tracking-[0.04em]"
+            >
               NHIỆM VỤ HÔM NAY
-            </div>
+            </h2>
+
             <Link
               href="/tasks"
-              className="text-body font-medium text-text-muted no-underline hover:underline"
+              className="inline-flex items-center gap-1 text-[14px] leading-[18px] font-medium text-[#6B7280]"
             >
-              Xem tất cả ›
+              Xem tất cả <span aria-hidden>›</span>
             </Link>
           </div>
 
-          <div className="space-y-sm">
+          {/* spacing = 16px giữa các nhiệm vụ */}
+          <div className="space-y-4">
             {["Click ads", "Click ads", "Click ads"].map((t, i) => (
-              <div
-                key={i}
-                className="flex items-center justify-between rounded-control border border-border p-md bg-bg-card shadow-sm"
-              >
-                <div className="flex items-center gap-sm">
-                  <input type="checkbox" className="w-5 h-5" />
+              <div key={i} className="flex items-center justify-between">
+                {/* LEFT */}
+                <div className="flex items-center gap-4">
+                  {/* Ô vuông xám */}
+                  <div className="w-[32px] h-[32px] rounded-[8px] bg-[#BDB8B8]" />
+
                   <div>
-                    <div className="text-body">
+                    <div className="text-[14px] leading-[20px] font-normal text-[#222222]">
                       {t}{" "}
-                      <span className="text-caption text-text-muted">5%</span>
+                      <span className="text-[12px] leading-[18px] font-normal text-[#9CA3AF]">
+                        5%
+                      </span>
                     </div>
-                    <div
-                      className="text-body font-medium"
-                      style={{ color: "#2E7D32" }}
-                    >
+
+                    <div className="mt-[2px] text-[14px] leading-[20px] font-medium text-brand-primary">
                       +5.000đ
                     </div>
                   </div>
                 </div>
 
-                <Link href="/tasks">
-                  <Button className="px-5 text-btn lg:text-body font-semibold">
-                    Làm
-                  </Button>
+                {/* RIGHT – nút soft */}
+                <Link href="/tasks" aria-label={`Làm nhiệm vụ ${t}`}>
+ <Button
+  variant="soft"
+  className="
+    w-[82px] h-[44px]
+    rounded-[22px]
+    text-[16px] leading-[20px] font-medium
+    shadow-none
+  "
+>
+  Làm
+</Button>
+
+
+
                 </Link>
               </div>
             ))}
           </div>
         </section>
-      </PageContainer>
-    </>
+      </div>
+    </PageContainer>
   );
 }

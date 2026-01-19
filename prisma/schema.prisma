@@ -1,301 +1,172 @@
-generator client {
-  provider = "prisma-client-js"
-}
-
+// ===================== Datasource & Generator =====================
 datasource db {
-  provider = "sqlite"
-  url      = env("DATABASE_URL")
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
 }
 
-/**
- * ==================== ENUMS ====================
- */
-
-enum UserRole {
-  USER
-  ADMIN
-  SUPPORT
+generator client {
+  provider = "prisma-client-js"
 }
 
-enum WithdrawalStatus {
-  PENDING
-  QUEUED
-  PROCESSING
-  SUCCESS
-  FAILED
-  CANCELED
-}
+// ===================== Models =====================
 
-enum OtpPurpose {
-  reset_password
-  verify_email
-  change_phone
-}
-
-enum SupportTicketStatus {
-  OPEN
-  IN_PROGRESS
-  RESOLVED
-  CLOSED
-}
-
-enum SupportTicketMessageRole {
-  USER
-  SUPPORT
-  SYSTEM
-}
-
-/**
- * ==================== CORE MODELS ====================
- */
-
+// ---- User ----
 model User {
-  id              Int              @id @default(autoincrement())
-  email           String           @unique
-  password        String
-  role            UserRole         @default(USER)
-  tokenVersion    Int              @default(0) // ✅ Sửa lỗi tokenVersion
+  id           Int     @id @default(autoincrement())
+  email        String  @unique
+  password     String
+  role         String  @default("USER")
+  tokenVersion Int     @default(0)
+  banned       Boolean @default(false)
 
-  createdAt       DateTime         @default(now()) @map("created_at")
-  updatedAt       DateTime         @default(now()) @updatedAt @map("updated_at")
+  // Đã khớp kiểu String? và thêm @unique để đảm bảo 1:0..1
+  selectedBankId String? @unique
 
-  // Quan hệ nghiệp vụ
-  wallet          Wallet?
-  otpRequests     OtpRequest[]
-  withdrawals     Withdrawal[]
-  walletHistory   WalletHistory[]
-  bankAccounts    BankAccount[]
-  supportTickets  SupportTicket[]
-  posts           Post[]
-  // ✅ ĐÃ THÊM: Mối quan hệ ngược lại với Commission để hoàn thiện 1-n
-  commissions     Commission[] 
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  // Quan hệ NextAuth
-  accounts Account[]
-  sessions Session[]
+  wallet Wallet?
+
+  // 1-n với BankAccount
+  banks BankAccount[] @relation("UserBanks")
+
+  withdrawals Withdrawal[]
+  history     WalletHistory[]
+  commissions Commission[]
+  tickets     SupportTicket[]
+  messages    ChatMessage[]
+  otpRequests OtpRequest[]
+
+  // ngân hàng đang chọn (Quan hệ 1:0..1)
+  selectedBank BankAccount? @relation("SelectedBank", fields: [selectedBankId], references: [id])
 }
 
-/**
- * Bài viết (CRUD cơ bản)
- */
-model Post {
-  id        Int      @id @default(autoincrement())
-  title     String
-  content   String?
-  published Boolean  @default(false)
-
-  authorId  Int
-  author    User     @relation(fields: [authorId], references: [id])
-
-  slug      String   @unique
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-
-/**
- * ==================== NEXTAUTH MODELS ====================
- */
-
-model Account {
-  id                String  @id @default(cuid())
-  userId            Int
-  type              String
-  provider          String
-  providerAccountId String
-  refresh_token     String?
-  access_token      String?
-  expires_at        Int?
-  token_type        String?
-  scope             String?
-  id_token          String?
-  session_state     String?
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@unique([provider, providerAccountId])
-  @@map("accounts")
-}
-
-model Session {
-  id           String   @id @default(cuid())
-  sessionToken String   @unique
-  userId       Int
-  expires      DateTime
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@map("sessions")
-}
-
-model VerificationToken {
-  identifier String
-  token      String   @unique
-  expires    DateTime
-
-  @@unique([identifier, token])
-  @@map("verificationtokens")
-}
-
-/**
- * ==================== WALLET & FINANCE ====================
- */
-
+// ---- Wallet ----
 model Wallet {
-  id      Int      @id @default(autoincrement())
-  userId  Int      @unique @map("user_id")
-  balance Decimal @default(0) // ✅ Bỏ @db.Decimal
-  status  String   @default("ACTIVE")
-
-  user User @relation(fields: [userId], references: [id])
-
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
-
-  @@map("wallets")
+  userId   Int     @id
+  user     User    @relation(fields: [userId], references: [id])
+  balance  Decimal @default(0)
+  currency String  @default("VND")
 }
 
-model Withdrawal {
-  id              Int              @id @default(autoincrement())
-  userId          Int
-  amount          Decimal          // ✅ Bỏ @db.Decimal(18, 2)
-  fee             Decimal          // ✅ Bỏ @db.Decimal(18, 2)
-  method          String
-  status          WithdrawalStatus @default(PENDING)
-  
-  bankAccountId   Int?             @map("bank_account_id") // Khóa ngoại cho quan hệ
-  
-  idempotencyKey  String?          @unique // ✅ Bổ sung key chống trùng lặp
-  transactionId   String?          @unique // ✅ Mã giao dịch cổng thanh toán
-  note            String?          // ✅ Bỏ @db.Text
-  
-  createdAt       DateTime         @default(now())
-  updatedAt       DateTime         @updatedAt
-
-  user            User             @relation(fields: [userId], references: [id])
-  bankAccount     BankAccount?     @relation(fields: [bankAccountId], references: [id]) // ✅ Sửa lỗi quan hệ
-
-  @@map("withdrawals")
-}
-
-
+// ---- WalletHistory ----
 model WalletHistory {
-  id      Int      @id @default(autoincrement())
-  userId  Int      @map("user_id")
-  text    String
-  sub     String?
-  amount  Decimal @default(0) // ✅ Bỏ @db.Decimal
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id])
+  text      String
+  sub       String?
+  amount    Decimal?
+  createdAt DateTime @default(now())
 
-  user User @relation(fields: [userId], references: [id])
-
-  createdAt DateTime @default(now()) @map("created_at")
-
-  @@map("wallet_history")
+  @@index([userId, createdAt])
 }
 
+// ---- BankAccount ----
 model BankAccount {
-  id            Int      @id @default(autoincrement())
-  userId        Int      @map("user_id")
-  bankName      String
-  accountName   String
-  accountNumber String
-  isDefault     Boolean  @default(false)
+  id         String   @id @default(cuid())
 
-  user          User     @relation(fields: [userId], references: [id])
-  withdrawals   Withdrawal[]
-  createdAt     DateTime @default(now()) @map("created_at")
+  // Sửa: Phải là Int? và User? để cho phép tạo BankAccount mà không cần User ID ngay
+  userId     Int?                // 👈 Cần thêm dấu ?
+  user       User?    @relation("UserBanks", fields: [userId], references: [id]) // 👈 Cần thêm dấu ?
 
-  // ✅ Cho phép upsert bằng { where: { userId_accountNumber: { userId, accountNumber } } }
-  @@unique([userId, accountNumber], name: "userId_accountNumber")
+  // đối ứng cho "SelectedBank"
+  selectedBy User?    @relation("SelectedBank")
 
-  @@map("bank_accounts")
+  bankName   String
+  number     String
+  holder     String
+  isDefault  Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([userId, isDefault])
 }
 
-// ✅ ĐÃ THÊM: Model Commission để giải quyết lỗi TypeScript
+// ---- Withdrawal ----
+model Withdrawal {
+  id     Int  @id @default(autoincrement())
+  userId Int
+  user   User @relation(fields: [userId], references: [id])
+
+  amount        Decimal
+  fee           Decimal @default(0)
+  status        String  @default("QUEUED") // thay enum bằng String
+  method        String?
+  bankName      String?
+  bankAccount   String?
+  transactionId String?
+  note          String?
+
+  idempotencyKey String?  @unique
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([userId, createdAt])
+  @@index([status, createdAt])
+}
+
+// ---- Commission ----
 model Commission {
   id        Int      @id @default(autoincrement())
-  userId    Int      @map("user_id")
-  amount    Float    // Sử dụng Float hoặc Decimal cho tiền tệ
-  status    String   // Ví dụ: 'PENDING', 'PAID', 'CANCELLED'
-  createdAt DateTime @default(now()) @map("created_at")
-
+  userId    Int
   user      User     @relation(fields: [userId], references: [id])
-  
-  @@map("commissions") // Tên bảng trong database
+  amount    Decimal
+  status    String
+  createdAt DateTime @default(now())
+
+  @@index([userId, createdAt])
 }
-
-
-/**
- * ==================== SECURITY & IDEMPOTENCY ====================
- */
-
-model OtpRequest {
-  id        Int      @id @default(autoincrement())
-  userId    Int      @map("user_id")
-  email     String
-  code      String
-  expireAt  DateTime @map("expire_at")
-  purpose   OtpPurpose
-  used      Boolean  @default(false)
-
-  user User @relation(fields: [userId], references: [id])
-
-  createdAt DateTime @default(now()) @map("created_at")
-
-  @@map("otp_requests")
-}
-
-model IdempotencyRecord {
-  idempotencyKey String   @id @map("id")
-  endpoint       String
-  expireAt       DateTime @map("expire_at")
-  responseStatus Int      @map("response_status")
-  responseBody   String?  @map("response_body")
-
-  createdAt DateTime @default(now()) @map("created_at")
-
-  @@map("idempotency_records")
-}
-
-
-/**
- * ==================== SUPPORT TICKET ====================
- */
 
 model SupportTicket {
-  id           Int                 @id @default(autoincrement())
-  userId       Int                 @map("user_id")
-  title        String
-  content      String
-  status       SupportTicketStatus @default(OPEN)
-
-  chatMessages SupportTicketMessage[]
-
-  user User @relation(fields: [userId], references: [id])
-
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
-
-  @@map("support_tickets")
+  id             Int      @id @default(autoincrement())
+  userId         Int
+  user           User     @relation(fields: [userId], references: [id])
+  room           String
+  title          String
+  status         String   @default("OPEN")
+  firstMessageId Int?
+  createdAt      DateTime @default(now())
 }
 
-model SupportTicketMessage {
-  id        Int                    @id @default(autoincrement())
-  ticketId  Int                    @map("ticket_id")
-  role      SupportTicketMessageRole
-  content   String
+model ChatMessage {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id])
+  room      String
+  from      String   // "agent" | "user" | "system"
+  text      String
+  createdAt DateTime @default(now())
 
-  ticket SupportTicket @relation(fields: [ticketId], references: [id])
-
-  createdAt DateTime @default(now()) @map("created_at")
-
-  @@map("support_ticket_messages")
+  @@index([userId, room, createdAt])
 }
 
-model Category {
-  id        Int      @id @default(autoincrement())
-  name      String   @unique
-  slug      String   @unique
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+
+// ---- OtpRequest ----
+model OtpRequest {
+  id        Int       @id @default(autoincrement())
+  userId    Int?
+  user      User?     @relation(fields: [userId], references: [id])
+  email     String
+  codeHash  String
+  type      String
+  verified  Boolean   @default(false)
+  expireAt  DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([email, expireAt])
+  @@index([userId, createdAt])
+}
+
+// ---- IdempotencyRecord ----
+model IdempotencyRecord {
+  idempotencyKey String   @id
+  endpoint       String
+  expireAt       DateTime
+  responseStatus Int?
+  responseBody   String?
+  createdAt      DateTime @default(now())
+
+  @@index([endpoint, expireAt])
 }

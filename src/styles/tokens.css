@@ -1,38 +1,49 @@
-/**
- * Do not edit directly
- * Generated on Mon, 29 Sep 2025 14:05:13 GMT
- */
-
+/* src/styles/tokens.css */
+/* Light theme (default) */
 :root {
-  --semantic-color-border-default: #eaeaea;
+  /* ====== Brand & semantic colors ====== */
+
+  /* 🔒 BRAND PRIMARY — NGUỒN DUY NHẤT */
+  --semantic-color-brand-primary: #F2994A;
+
+  /* 🔑 Alias để Button / Tailwind / component dùng */
+  --brand-primary: #F2994A;
+
+  /* ====== Background ====== */
+  --semantic-color-bg-page: #FFFFFD;   /* nền toàn app */
+  --semantic-color-bg-card: #FFFFFF;
+
+  /* ====== Text ====== */
   --semantic-color-text-default: #222222;
-  --global-shadow-md: 0 2px 8px rgba(0, 0, 0, 0.1);
-  --global-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.06);
-  --global-font-weight-bold: 700;
-  --global-font-weight-medium: 500;
-  --global-font-weight-regular: 400;
-  --global-font-line-height-lg: 28;
-  --global-font-line-height-md: 24;
-  --global-font-line-height-sm: 20;
-  --global-font-size-lg: 18;
-  --global-font-size-md: 16;
-  --global-font-size-sm: 14;
-  --global-font-family: Inter, system-ui, Arial, sans-serif;
-  --global-radius-md: 12;
-  --global-radius-sm: 8;
-  --global-space-xl: 32;
-  --global-space-lg: 24;
-  --global-space-md: 16;
-  --global-space-sm: 8;
-  --global-space-xs: 4;
-  --global-color-paper: #fffffd;
-  --global-color-white: #ffffff;
-  --global-color-gray700: #6d6d6d;
-  --global-color-orange500: #f2994a;
-  --semantic-space-control-gap: var(--global-space-md);
-  --semantic-radius-control: var(--global-radius-sm);
-  --semantic-color-text-muted: var(--global-color-gray700);
-  --semantic-color-bg-card: var(--global-color-white);
-  --semantic-color-bg-page: var(--global-color-paper);
-  --semantic-color-brand-primary: var(--global-color-orange500);
+  --semantic-color-text-muted: #6D6D6D;
+
+  /* ====== Border ====== */
+  --semantic-color-border-default: #ECE7E1;
+
+  /* ====== State colors ====== */
+  --semantic-color-success: #2E7D32;
+  --semantic-color-danger:  #EB5757;
+
+  /* ====== Soft button / tag ====== */
+  --semantic-color-soft-bg: #FFF3E5;   /* nền nút nhẹ */
+  --semantic-color-soft-fg: #E67E22;   /* chữ nút nhẹ */
+
+  /* ====== Radius ====== */
+  --radius-control: 12px;
+  --radius-card: 16px;
+
+  /* ====== Shadow ====== */
+  --shadow-sm: 0 1px 2px rgba(0,0,0,0.06);
+  --shadow-md: 0 4px 12px rgba(0,0,0,0.12);
+}
+
+/* Dark mode (để sẵn, dùng sau) */
+[data-theme="dark"] {
+  --semantic-color-bg-page: #111827;
+  --semantic-color-bg-card: #1F2937;
+
+  --semantic-color-text-default: #F3F4F6;
+  --semantic-color-text-muted: #9CA3AF;
+
+  --semantic-color-border-default: #374151;
 }

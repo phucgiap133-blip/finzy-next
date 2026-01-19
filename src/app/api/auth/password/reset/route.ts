@@ -1,68 +1,41 @@
-import { NextResponse } from "next/server";
+import { jsonOk, jsonErr } from "@/lib/route-helpers";
+import { PasswordResetSchema } from "@/lib/validations";
 import { prisma } from "@/server/prisma";
 import bcrypt from "bcryptjs";
-import { readJsonAndValidate, ApiError } from "@/lib/utils";
-import { rateLimit } from "@/lib/ratelimit";
-import { PasswordChangeSchema } from "@/lib/validations/auth";
-
-const RESET_LIMIT = 5;
-const RESET_WINDOW_MS = 10 * 60_000;
+import { verifyOtp } from "@/lib/utils";
+import { logAudit } from "@/server/audit";
 
 export async function POST(req: Request) {
   try {
-    const { email, otp, newPassword } = await readJsonAndValidate(req, PasswordResetSchema);
+    const { email, otp, newPassword } = PasswordResetSchema.parse(await req.json());
 
-    const safeEmail = email;
-    const safeOtp = otp;
-    const safePass = newPassword;
-
-    const rl = rateLimit(`reset:${safeEmail}`, RESET_LIMIT, RESET_WINDOW_MS);
-    if (!rl.ok) {
-      return NextResponse.json(
-        { error: `Quá nhiều yêu cầu, thử lại sau ${rl.retryAfter}s` },
-        { status: 429 },
-      );
-    }
-
-    const user = await prisma.user.findUnique({ where: { email: safeEmail } });
-    if (!user) throw new ApiError("Thông tin không hợp lệ", 400);
+    const user = await prisma.user.findUnique({ where: { email } });
+    if (!user) return jsonOk({ ok: true }); // tránh lộ thông tin
 
     const rec = await prisma.otpRequest.findFirst({
-      where: {
-        userId: user.id,
-        email: safeEmail,
-        used: false,
-        purpose: "reset_password", // ✅ snake_case
-      },
+      where: { userId: user.id, email, type: "RESET_PASSWORD", verified: true },
       orderBy: { createdAt: "desc" },
     });
-    if (!rec) throw new ApiError("OTP không hợp lệ", 400);
-    if (rec.expireAt.getTime() < Date.now()) throw new ApiError("OTP đã hết hạn", 400);
+    if (!rec || rec.expireAt < new Date()) return jsonErr("OTP đã hết hạn", 400);
 
-    await prisma.$transaction(async (tx) => {
-      const ok = await bcrypt.compare(safeOtp, rec.code);
-      if (!ok) throw new ApiError("OTP không đúng", 400);
+    const ok = await verifyOtp(otp, rec.codeHash);
+    if (!ok) return jsonErr("OTP không đúng", 400);
 
-      const hashed = await bcrypt.hash(safePass, 10);
-      await tx.user.update({ where: { id: user.id }, data: { password: hashed } });
-
-      await tx.otpRequest.updateMany({
-        where: {
-          userId: user.id,
-          email: safeEmail,
-          used: false,
-          purpose: "reset_password", // ✅ snake_case
-        },
-        data: { used: true },
-      });
+    const hash = await bcrypt.hash(newPassword, 10);
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { password: hash, tokenVersion: (user.tokenVersion ?? 0) + 1 },
     });
 
-    return NextResponse.json({ ok: true });
+    await prisma.otpRequest.update({ where: { id: rec.id }, data: { usedAt: new Date() } });
+    await logAudit(user.id, "PASSWORD_RESET", "via OTP");
+
+    // buộc đăng nhập lại
+    const res = jsonOk({ ok: true });
+    res.headers.append("Set-Cookie", "accessToken=; Path=/; Max-Age=0; HttpOnly; SameSite=Lax");
+    res.headers.append("Set-Cookie", "refreshToken=; Path=/; Max-Age=0; HttpOnly; SameSite=Lax");
+    return res;
   } catch (e: any) {
-    if (e instanceof ApiError) {
-      return NextResponse.json({ error: e.message }, { status: e.status });
-    }
-    console.error("[password/reset] UNHANDLED error:", e);
-    return NextResponse.json({ error: "Lỗi hệ thống không xác định" }, { status: 500 });
+    return jsonErr(e?.message || "Bad request", 400);
   }
 }

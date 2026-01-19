@@ -1,3 +1,7 @@
+"use client";
+
+import * as React from "react";
+
 type InputProps = {
   label?: string;
   type?: string;
@@ -5,7 +9,7 @@ type InputProps = {
   placeholder?: string;
   className?: string;
   onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  onBlur?: (e: React.FocusEvent<HTMLInputElement>) => void; // 🟢 thêm dòng này
+  onBlur?: (e: React.FocusEvent<HTMLInputElement>) => void;
 };
 
 export default function Input({
@@ -15,18 +19,27 @@ export default function Input({
   placeholder,
   className = "",
   onChange,
-  onBlur, // 🟢 thêm vào destructuring
+  onBlur,
 }: InputProps) {
   return (
-    <div className="space-y-1">
-      {label && <label className="text-sm font-medium">{label}</label>}
+    <div className="space-y-xs w-full">
+      {label && (
+        <label className="text-body font-medium text-text">{label}</label>
+      )}
       <input
         type={type}
         value={value}
         onChange={onChange}
-        onBlur={onBlur} // 🟢 truyền xuống input thật
+        onBlur={onBlur}
         placeholder={placeholder}
-        className={`w-full rounded-md border px-3 py-2 outline-none ${className}`}
+        className={[
+          "w-full rounded-[12px] border border-border bg-white",
+          "px-md py-sm text-body text-text placeholder:text-text-muted",
+          "focus:outline-none focus:ring-1 focus:ring-[var(--semantic-color-brand-primary)] focus:border-[var(--semantic-color-brand-primary)]",
+          className,
+        ]
+          .join(" ")
+          .trim()}
       />
     </div>
   );

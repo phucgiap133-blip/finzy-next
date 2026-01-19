@@ -16,7 +16,7 @@ const BANKS: string[] = [
   "Eximbank (EIB)",
   "SCB",
   "SeABank (SSB)",
-  "VietCapital Bank (VCBI)", // sửa mã chuẩn
+  "VietCapital Bank (VCBI)",
   "BacABank (BAB)",
   "ABBANK (ABB)",
   "NCB",
@@ -24,8 +24,7 @@ const BANKS: string[] = [
   "KienlongBank (KLB)",
   "Nam A Bank (NAB)",
   "Maritime Bank (MSB)",
-  "OceanBank (OJB)", // tránh trùng OCB -> dùng OJB (thường gặp)
-  "MoMo (MOMO)", // ✅ thêm
-  "ZaloPay (ZLP)", // ✅ thêm
+  "OceanBank (OJB)",
 ];
+
 export default BANKS;

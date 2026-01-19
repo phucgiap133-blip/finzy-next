@@ -1,20 +1,13 @@
-// src/components/OTPInput.tsx
 "use client";
 import { useRef, useEffect } from "react";
 
-type Props = {
-  length?: number;
-  value?: string;
-  onChange?: (v: string) => void;
-};
+type Props = { length?: number; value?: string; onChange?: (v: string) => void };
 
-export default function OTPInput({ length = 4, value = "", onChange }: Props) {
+export default function OTPInput({ length = 6, value = "", onChange }: Props) {
   const refs = useRef<Array<HTMLInputElement | null>>([]);
 
   useEffect(() => {
-    refs.current = Array(length)
-      .fill(null)
-      .map((_, i) => refs.current[i] || null);
+    refs.current = Array(length).fill(null).map((_, i) => refs.current[i] || null);
   }, [length]);
 
   const val = value.padEnd(length, " ").slice(0, length).split("");
@@ -27,9 +20,7 @@ export default function OTPInput({ length = 4, value = "", onChange }: Props) {
   };
 
   const onKey = (i: number, e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Backspace" && !val[i] && refs.current[i - 1]) {
-      refs.current[i - 1]?.focus();
-    }
+    if (e.key === "Backspace" && !val[i] && refs.current[i - 1]) refs.current[i - 1]?.focus();
   };
 
   return (
@@ -37,9 +28,7 @@ export default function OTPInput({ length = 4, value = "", onChange }: Props) {
       {Array.from({ length }).map((_, i) => (
         <input
           key={i}
-          ref={(el) => {
-            refs.current[i] = el; // ✅ trả về void, không return el
-          }}
+          ref={(el) => { refs.current[i] = el; }}
           inputMode="numeric"
           maxLength={1}
           className="w-12 h-12 rounded-control border border-border text-center text-md"

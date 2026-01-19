@@ -1,12 +1,6 @@
 "use client";
 
-import {
-  createContext,
-  useContext,
-  useState,
-  useCallback,
-  ReactNode,
-} from "react";
+import { createContext, useContext, useState, useCallback, ReactNode } from "react";
 
 type MenuContextType = {
   open: boolean;
@@ -49,18 +43,9 @@ export default function MenuProvider({ children }: { children: ReactNode }) {
   const toggleLogout = useCallback(() => setLogoutOpen((v) => !v), []);
 
   const value: MenuContextType = {
-    open,
-    openMenu,
-    closeMenu,
-    toggleMenu,
-    accountOpen,
-    openAccount,
-    closeAccount,
-    toggleAccount,
-    logoutOpen,
-    openLogout,
-    closeLogout,
-    toggleLogout,
+    open, openMenu, closeMenu, toggleMenu,
+    accountOpen, openAccount, closeAccount, toggleAccount,
+    logoutOpen, openLogout, closeLogout, toggleLogout,
   };
 
   return <MenuCtx.Provider value={value}>{children}</MenuCtx.Provider>;

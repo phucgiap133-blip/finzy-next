@@ -1,0 +1,10 @@
+# robots.txt for Finzy App
+User-agent: *
+Allow: /
+
+# Disallow sensitive routes
+Disallow: /api/
+Disallow: /admin/
+Disallow: /_next/
+
+Sitemap: https://finzy.tech/sitemap.xml

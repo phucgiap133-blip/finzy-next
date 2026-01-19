@@ -1,30 +1,15 @@
-import { NextResponse } from "next/server";
-import { prisma } from "@/server/prisma";
-import { requireAdmin, isAuthErr } from "@/server/authz";
-import { withdrawQueue } from "@/queues/withdraw.queue";
-import { logAudit } from "@/server/audit";
+// src/app/api/admin/withdrawals/[id]/requeue/route.ts
+import { getServerSession } from "next-auth";
+import { db, jsonErr } from "@/app/api/_db";
 
-export async function POST(req: Request, { params }: { params: { id: string } }) {
-  const auth = await requireAdmin(req);
-  if (isAuthErr(auth)) return NextResponse.json({ ok:false, error:"FORBIDDEN" }, { status: 403 });
-  const adminId = Number(auth.payload.userId);
+export async function POST(_: Request, ctx: { params: { id: string } }) {
+  const session = await getServerSession();
+  const role = (session?.user as any)?.role || "USER";
+  if (role !== "ADMIN") return jsonErr("FORBIDDEN", 403);
 
-  const id = Number(params.id);
-  const wd = await prisma.withdrawal.findUnique({ where: { id } });
-  if (!wd) return NextResponse.json({ ok:false, error:"Not found" }, { status:404 });
+  const idx = db.withdrawalItems.findIndex((w) => w.id === ctx.params.id);
+  if (idx < 0) return jsonErr("Không tìm thấy giao dịch", 404);
 
-  // Chuẩn bị jobData giống lúc tạo
-  const jobId = wd.idempotencyKey ?? String(wd.id);
-  const jobData = {
-    userId: String(wd.userId),
-    amount: Number(wd.amount),
-    bankAccount: (wd as any).bankAccount ?? "UNKNOWN",
-    bankName: (wd as any).bankName ?? "UNKNOWN",
-    idempotencyKey: jobId,
-  };
-
-  await withdrawQueue.add("processWithdrawal", jobData, { jobId, removeOnComplete: true, removeOnFail: false });
-  await logAudit(adminId, "ADMIN_REQUEUE", `wd#${wd.id} jobId=${jobId}`);
-
-  return NextResponse.json({ ok:true, jobId });
+  db.withdrawalItems[idx].status = "Đang xử lý";
+  return Response.json({ ok: true, item: db.withdrawalItems[idx] });
 }

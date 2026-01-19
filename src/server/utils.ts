@@ -1,24 +1,40 @@
-import { NextResponse } from "next/server";
+// src/server/utils.ts
+import { randomUUID } from "crypto";
 
-// ✅ HÀM PHẢI LÀ ASYNC VÀ TRẢ VỀ PROMISE<NUMBER | NULL>
-export async function getUserId(): Promise<number | null> {
-    // Tạm giả lập user đăng nhập (UserId 1)
-    return 1;
+/** Chuẩn hóa log */
+export function logInfo(...args: any[]) {
+  console.log(`[INFO]`, ...args);
+}
+export function logWarn(...args: any[]) {
+  console.warn(`[WARN]`, ...args);
+}
+export function logError(...args: any[]) {
+  console.error(`[ERROR]`, ...args);
 }
 
-export function json(data: any, init?: ResponseInit) {
-    return NextResponse.json(data, init);
-}
+/** Sinh UUID an toàn */
+export const uuid = () => randomUUID();
 
-export function viStatus(
-    status: "pending" | "success" | "failed"
-): "Đang xử lý" | "Thành công" | "Thất bại" {
-    switch (status) {
-        case "success":
-            return "Thành công";
-        case "failed":
-            return "Thất bại";
-        default:
-            return "Đang xử lý";
-    }
+/** Định dạng tiền VND */
+export const formatVND = (n: number | string) => {
+  const v = Number(n || 0);
+  return v.toLocaleString("vi-VN", { style: "currency", currency: "VND" });
+};
+
+/** Chờ delay mili giây */
+export const sleep = (ms: number) => new Promise(r => setTimeout(r, ms));
+
+/** Tính thời gian thực thi (debug) */
+export async function measure<T>(label: string, fn: () => Promise<T>): Promise<T> {
+  const start = Date.now();
+  try {
+    const res = await fn();
+    const dur = Date.now() - start;
+    logInfo(`${label} completed in ${dur}ms`);
+    return res;
+  } catch (e) {
+    const dur = Date.now() - start;
+    logError(`${label} failed after ${dur}ms`, e);
+    throw e;
+  }
 }

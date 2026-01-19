@@ -40,9 +40,7 @@ export default function BankPicker({
     return () => document.removeEventListener("mousedown", onClickOutside);
   }, []);
 
-  useEffect(() => {
-    setActive(0);
-  }, [q, open]);
+  useEffect(() => setActive(0), [q, open]);
 
   const commit = (item: string) => {
     onChange(item);
@@ -103,9 +101,7 @@ export default function BankPicker({
 
           <div ref={listRef} role="listbox" className="max-h-64 overflow-auto">
             {filtered.length === 0 ? (
-              <div className="px-md py-sm text-sm text-text-muted">
-                Không tìm thấy ngân hàng
-              </div>
+              <div className="px-md py-sm text-sm text-text-muted">Không tìm thấy ngân hàng</div>
             ) : (
               filtered.map((item, i) => (
                 <button

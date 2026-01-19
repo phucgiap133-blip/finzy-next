@@ -1,4 +1,3 @@
-// src/components/EmailSmartButton.tsx
 "use client";
 import React from "react";
 
@@ -34,12 +33,7 @@ export default function EmailSmartButton({
   };
 
   return (
-    <a
-      href={`mailto:${to}`}
-      onClick={onClick}
-      className={className}
-      rel="noopener noreferrer"
-    >
+    <a href={`mailto:${to}`} onClick={onClick} className={className} rel="noopener noreferrer">
       {children}
     </a>
   );

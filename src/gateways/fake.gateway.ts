@@ -1,28 +1,38 @@
 // src/gateways/fake.gateway.ts
-import { PaymentGateway, PaymentDetails } from './payment.interface';
+import type {
+  PaymentGateway,
+  WithdrawRequest,
+  WithdrawSubmitResult,
+  StdWithdrawStatus,
+} from "./payment.interface";
 
-class FakePaymentGateway implements PaymentGateway {
-    
-    async processWithdrawal(details: PaymentDetails): Promise<string> {
-        console.log(`[Fake Gateway] Nhận yêu cầu rút: ${details.amount} VND`);
-
-        return new Promise((resolve, reject) => {
-            setTimeout(() => {
-                const isSuccess = Math.random() > 0.1; // 90% thành công, 10% thất bại mô phỏng
-
-                if (isSuccess) {
-                    const refId = `FAKE-${Date.now()}-${details.bankAccount.slice(-4)}`;
-                    resolve(refId); 
-                } else {
-                    reject(new Error('FGW-001: Lỗi kết nối mô phỏng.'));
-                }
-            }, 500 + Math.random() * 1500); // Độ trễ ngẫu nhiên
-        });
-    }
-
-    async checkStatus(refId: string): Promise<'success' | 'failed' | 'pending'> {
-        return Promise.resolve('pending'); 
-    }
+function delay(ms: number) {
+  return new Promise((r) => setTimeout(r, ms));
 }
 
-export const paymentGateway: PaymentGateway = new FakePaymentGateway();
+/**
+ * Gateway fake để dev/test.
+ * - process(): giả lập tạo giao dịch và trả về gatewayRef
+ * - checkStatus(): giả lập tiến trình PROCESSING → SUCCESS/FAILED
+ */
+export class FakeGateway implements PaymentGateway {
+  async process(req: WithdrawRequest): Promise<WithdrawSubmitResult> {
+    // giả lập mạng/chờ đối tác
+    await delay(Math.floor(Math.random() * 800) + 300);
+    const ref = `FAKE-${Date.now()}-${req.userId}`;
+    return { ok: true, gatewayRef: ref };
+  }
+
+  async checkStatus(ref: string): Promise<StdWithdrawStatus> {
+    await delay(Math.floor(Math.random() * 600) + 200);
+
+    // Xác suất: 10% FAILED, 40% PROCESSING, 50% SUCCESS
+    const r = Math.random();
+    if (r < 0.1) return "FAILED";
+    if (r < 0.5) return "PROCESSING";
+    return "SUCCESS";
+  }
+}
+
+// tiện export 1 instance xài nhanh
+export const fakeGateway = new FakeGateway();

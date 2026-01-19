@@ -23,14 +23,14 @@ export default function SwipePager({
   const [selectedKey, setSelectedKey] = useState<string>(() => tabs[safeInitialIndex]?.key ?? tabs[0]?.key);
 
   useEffect(() => {
-    if (!tabs.length) return;
-    const exists = tabs.some(t => t.key === selectedKey);
-    if (!exists) {
-      const fallbackKey = tabs[Math.min(safeInitialIndex, tabs.length - 1)]?.key ?? tabs[0].key;
-      setSelectedKey(fallbackKey);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tabs]);
+    if (!tabs.length) return;
+    const exists = tabs.some(t => t.key === selectedKey);
+    if (!exists) {
+      // Nếu tab đã chọn không còn tồn tại, quay về tab mặc định
+      const fallbackKey = tabs[Math.min(safeInitialIndex, tabs.length - 1)]?.key ?? tabs[0].key;
+      setSelectedKey(fallbackKey);
+    }
+  }, [tabs, selectedKey, safeInitialIndex, setSelectedKey]); // ✅ Thêm dependencies
 
   const index = useMemo(() => {
     const i = tabs.findIndex(t => t.key === selectedKey);
@@ -46,12 +46,14 @@ export default function SwipePager({
   const AXIS_LOCK = 8;
   const EASE = "cubic-bezier(.22,.61,.36,1)";
 
-  const setIndexSafe = (i: number) => {
-    const clamped = Math.min(Math.max(0, i), tabs.length - 1);
-    const key = tabs[clamped]?.key;
-    if (key) setSelectedKey(key);
-  };
-
+  const setIndexSafe = React.useCallback(
+    (i: number) => {
+      const clamped = Math.min(Math.max(0, i), tabs.length - 1);
+      const key = tabs[clamped]?.key;
+      if (key) setSelectedKey(key);
+    },
+    [tabs, setSelectedKey] // ✅ Bỏ tabs.length, chỉ giữ tabs và setSelectedKey
+  );
   useEffect(() => {
     const el = wrapRef.current;
     if (!el) return;
@@ -91,13 +93,11 @@ export default function SwipePager({
       const progress = dx / width;
 
       let next = index;
-      // ✅ Chuẩn hoá: phải→trái = next ; trái→phải = prev
       if (progress <= -SNAP_RATIO) next = Math.min(index + 1, tabs.length - 1);
       else if (progress >= SNAP_RATIO) next = Math.max(index - 1, 0);
 
       if (next !== index) {
         setAnimating(true);
-        // hiệu ứng theo hướng mới (next làm dải trượt sang trái)
         setDragX((next > index ? -1 : 1) * width * 0.6);
         setTimeout(() => {
           setIndexSafe(next);
@@ -131,36 +131,25 @@ export default function SwipePager({
     el.addEventListener("pointercancel", onPointerUp);
     el.addEventListener("pointerleave", onPointerUp);
 
-    return () => {
-      el.removeEventListener("pointerdown", onPointerDown);
-      el.removeEventListener("pointermove", onPointerMove);
-      el.removeEventListener("pointerup", onPointerUp);
-      el.removeEventListener("pointercancel", onPointerUp);
-      el.removeEventListener("pointerleave", onPointerUp);
-    };
-  }, [index, tabs.length]);
+return () => {
+      el.removeEventListener("pointerdown", onPointerDown);
+      el.removeEventListener("pointermove", onPointerMove);
+      el.removeEventListener("pointerup", onPointerUp);
+      el.removeEventListener("pointercancel", onPointerUp);
+      el.removeEventListener("pointerleave", onPointerUp);
+    };
+  }, [index, tabs.length, setIndexSafe, SNAP_RATIO, AXIS_LOCK]); // <--- Đảm bảo mảng dependencies này
 
   const indicatorWidthPct = useMemo(() => (tabs.length ? 100 / tabs.length : 100), [tabs.length]);
-  const indicatorOffsetPct = useMemo(
-    () => (tabs.length ? (index * 100) / tabs.length : 0),
-    [index, tabs.length]
-  );
+  const indicatorOffsetPct = useMemo(() => (tabs.length ? (index * 100) / tabs.length : 0), [index, tabs.length]);
 
   return (
     <div className={clsx("w-full", className)}>
-      {/* Tab bar */}
       <div className="rounded-full border border-border bg-[color:#F5EFE8] px-1 py-1 select-none">
-        <div
-          className="relative grid"
-          style={{ gridTemplateColumns: `repeat(${tabs.length || 1}, minmax(0, 1fr))` }}
-        >
+        <div className="relative grid" style={{ gridTemplateColumns: `repeat(${tabs.length || 1}, minmax(0, 1fr))` }}>
           <div
             className="absolute top-0 bottom-0 rounded-full bg-[var(--color-primary,#F2994A)] transition-[transform,width] duration-200"
-            style={{
-              width: `${indicatorWidthPct}%`,
-              transform: `translateX(${indicatorOffsetPct}%)`,
-              zIndex: 0,
-            }}
+            style={{ width: `${indicatorWidthPct}%`, transform: `translateX(${indicatorOffsetPct}%)`, zIndex: 0 }}
           />
           {tabs.map((t, i) => {
             const selected = i === index;
@@ -169,11 +158,8 @@ export default function SwipePager({
                 key={t.key}
                 type="button"
                 onClick={() => setIndexSafe(i)}
-                className={clsx(
-                  "relative z-10 h-9 w-full rounded-full text-btn transition",
-                  selected ? "text-white font-semibold" : "text-text-muted",
-                  tabClassName
-                )}
+                className={clsx("relative z-10 h-9 w-full rounded-full text-btn transition",
+                  selected ? "text-white font-semibold" : "text-text-muted", tabClassName)}
                 aria-selected={selected}
                 role="tab"
               >
@@ -184,11 +170,7 @@ export default function SwipePager({
         </div>
       </div>
 
-      {/* Viewport */}
-      <div
-        className="relative mt-3 overflow-hidden rounded-2xl border border-border bg-white"
-        data-pager-viewport
-      >
+      <div className="relative mt-3 overflow-hidden rounded-2xl border border-border bg-white" data-pager-viewport>
         <div className="pointer-events-none absolute inset-y-0 left-0 w-6 bg-gradient-to-r from-white to-transparent z-10" />
         <div className="pointer-events-none absolute inset-y-0 right-0 w-6 bg-gradient-to-l from-white to-transparent z-10" />
 

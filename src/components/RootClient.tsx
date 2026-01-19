@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useCallback, ReactNode } from "react";
+import { useEffect, useCallback } from "react";
 import { usePathname } from "next/navigation";
 import { useMenu } from "./MenuProvider";
 import SideMenu from "./SideMenu";
@@ -13,10 +13,7 @@ function RouteAutoCloser() {
   useEffect(() => {
     closeAccount();
     closeMenu();
-    if (
-      typeof window !== "undefined" &&
-      sessionStorage.getItem("openMenuAfterNav") === "1"
-    ) {
+    if (typeof window !== "undefined" && sessionStorage.getItem("openMenuAfterNav") === "1") {
       sessionStorage.removeItem("openMenuAfterNav");
       openMenu?.();
     }
@@ -25,24 +22,14 @@ function RouteAutoCloser() {
   return null;
 }
 
-export default function RootClient({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function RootClient({ children }: { children: React.ReactNode }) {
   const updateVar = useCallback(() => {
     const container = document.getElementById("app-container");
     const hero = document.getElementById("hero-card");
     const left = container ? container.getBoundingClientRect().left : 16;
-    document.documentElement.style.setProperty(
-      "--container-left",
-      `${Math.max(left, 8)}px`,
-    );
+    document.documentElement.style.setProperty("--container-left", `${Math.max(left, 8)}px`);
     const top = hero ? hero.getBoundingClientRect().top : 72;
-    document.documentElement.style.setProperty(
-      "--hero-top",
-      `${Math.max(top, 48)}px`,
-    );
+    document.documentElement.style.setProperty("--hero-top", `${Math.max(top, 48)}px`);
   }, []);
 
   useEffect(() => {
@@ -54,8 +41,8 @@ export default function RootClient({
   return (
     <>
       <SideMenu />
-      <AccountOverlay /> {/* z-60/61 */}
-      <LogoutOverlay /> {/* z-80/81 đè lên */}
+      <AccountOverlay />
+      <LogoutOverlay />   {/* ✅ overlay đăng xuất – đè lên giống menu/account */}
       <RouteAutoCloser />
       {children}
     </>

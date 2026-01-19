@@ -1,38 +1,29 @@
+// src/lib/jwt.ts
 import * as jwt from "jsonwebtoken";
-import { UserRole } from "@prisma/client"; // OK sau khi generate
+import type { Role } from "@/server/authz";
 
-// Định nghĩa Payload (Dữ liệu bạn muốn lưu trong token)
-export interface JwtPayload {
-  userId: string;
-  email: string;
-  role: UserRole;
-}
-
-// Lấy SECRET KEY từ biến môi trường
-const JWT_SECRET = process.env.JWT_SECRET || "fallback_secret_key"; // Thay bằng key mạnh
-
-if (!JWT_SECRET || JWT_SECRET === "fallback_secret_key") {
-  console.warn("⚠️ JWT_SECRET chưa được thiết lập. Hãy thiết lập biến môi trường JWT_SECRET.");
-}
-
-const TOKEN_EXPIRY = '7d'; // Token hết hạn sau 7 ngày
-
-/**
- * Tạo Token JWT
- */
-export const signJwt = (payload: JwtPayload): string => {
-  return jwt.sign(payload, JWT_SECRET, { expiresIn: TOKEN_EXPIRY });
+export type Payload = {
+  userId: number;
+  role: Role;                // <- string union "USER" | "ADMIN"
+  tokenVersion: number;
+  email?: string;
 };
 
-/**
- * Xác minh Token JWT và trả về Payload
- */
-export const verifyJwt = (token: string): JwtPayload | null => {
-  try {
-    const payload = jwt.verify(token, JWT_SECRET) as JwtPayload;
-    return payload;
-  } catch (error) {
-    // Token không hợp lệ, hết hạn, hoặc sai secret
-    return null;
-  }
-};
+const ACCESS_SECRET  = process.env.JWT_ACCESS_SECRET  || "change_me_access_secret_at_least_32_chars";
+const REFRESH_SECRET = process.env.JWT_REFRESH_SECRET || "change_me_refresh_secret_at_least_32_chars";
+const ACCESS_TTL  = "15m";
+const REFRESH_TTL = "7d";
+
+export function createAccessToken(p: Payload) {
+  return jwt.sign(p, ACCESS_SECRET,  { expiresIn: ACCESS_TTL  });
+}
+export function createRefreshToken(p: Payload) {
+  return jwt.sign(p, REFRESH_SECRET, { expiresIn: REFRESH_TTL });
+}
+
+export function verifyAccessToken(t: string): Payload | null {
+  try { return jwt.verify(t, ACCESS_SECRET)  as Payload; } catch { return null; }
+}
+export function verifyRefreshToken(t: string): Payload | null {
+  try { return jwt.verify(t, REFRESH_SECRET) as Payload; } catch { return null; }
+}

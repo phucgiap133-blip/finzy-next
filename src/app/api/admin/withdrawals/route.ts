@@ -1,44 +1,80 @@
-import { NextResponse } from "next/server";
-import { prisma } from "@/server/prisma";
-import { z } from "zod";
-import { requireAdmin, isAuthErr } from "@/server/authz"; // đã có ở authz.ts
+// src/app/api/admin/withdrawals/route.ts
+import { getServerSession } from "next-auth";
+import { db, jsonErr, uid } from "@/app/api/_db";
 
-const QuerySchema = z.object({
-  status: z.string().optional(),               // "QUEUED" | "PROCESSING" | "SUCCESS" | "FAILED"
-  userId: z.coerce.number().optional(),
-  from: z.coerce.date().optional(),
-  to: z.coerce.date().optional(),
-  limit: z.coerce.number().min(1).max(100).default(20),
-  cursor: z.coerce.number().optional(),        // id dạng số
-});
+type UiStatus = "success" | "failed" | "processing";
+const VN: Record<UiStatus, "Thành công" | "Thất bại" | "Đang xử lý"> = {
+  success: "Thành công",
+  failed: "Thất bại",
+  processing: "Đang xử lý",
+};
 
 export async function GET(req: Request) {
-  const auth = await requireAdmin(req);
-  if (isAuthErr(auth)) return NextResponse.json({ ok:false, error:"FORBIDDEN" }, { status: 403 });
+  const session = await getServerSession();
+  const role = (session?.user as any)?.role || "USER";
+  if (role !== "ADMIN") return jsonErr("FORBIDDEN", 403);
 
   const url = new URL(req.url);
-  const parsed = QuerySchema.safeParse(Object.fromEntries(url.searchParams));
-  if (!parsed.success) {
-    return NextResponse.json({ ok:false, error: parsed.error.issues[0]?.message ?? "Bad query" }, { status: 400 });
+  const status = (url.searchParams.get("status") || "").toLowerCase() as UiStatus | "";
+  const limit = Math.min(Math.max(Number(url.searchParams.get("limit") || "20"), 1), 100);
+  const cursor = url.searchParams.get("cursor"); // ISO createdAt
+
+  let items = [...db.withdrawalItems]
+    .sort((a, b) => +new Date(b.createdAt) - +new Date(a.createdAt));
+
+  if (status && VN[status]) items = items.filter((x) => x.status === VN[status]);
+
+  const page = cursor
+    ? items.filter((x) => +new Date(x.createdAt) < +new Date(cursor)).slice(0, limit)
+    : items.slice(0, limit);
+
+  const nextCursor = page.length ? page[page.length - 1].createdAt : null;
+
+  return Response.json({ ok: true, items: page, nextCursor, total: items.length });
+}
+
+export async function PATCH(req: Request) {
+  const session = await getServerSession();
+  const role = (session?.user as any)?.role || "USER";
+  if (role !== "ADMIN") return jsonErr("FORBIDDEN", 403);
+
+  const body = await req.json().catch(() => ({}));
+  const id = String(body?.id || "");
+  const action = (String(body?.status || "") as UiStatus).toLowerCase() as UiStatus;
+
+  if (!id) return jsonErr("Thiếu id", 400);
+  if (!VN[action]) return jsonErr("Trạng thái không hợp lệ", 400);
+
+  const idx = db.withdrawalItems.findIndex((w) => w.id === id);
+  if (idx < 0) return jsonErr("Không tìm thấy giao dịch", 404);
+
+  const it = db.withdrawalItems[idx];
+
+  // trạng thái cũ -> mới
+  const to = VN[action];
+  if (to === "Thành công") {
+    it.status = to;
+    db.history.unshift({
+      id: uid("h_"),
+      text: `Hoàn tất rút: ${Math.abs(it.amount).toLocaleString("vi-VN")}đ`,
+      sub: it.method,
+      createdAt: new Date().toISOString(),
+    });
+  } else if (to === "Thất bại") {
+    if (it.status !== "Thất bại") {
+      // hoàn tiền 1 lần
+      db.wallet.balance += Math.abs(it.amount);
+    }
+    it.status = to;
+    db.history.unshift({
+      id: uid("h_"),
+      text: `Rút thất bại: ${Math.abs(it.amount).toLocaleString("vi-VN")}đ`,
+      sub: "Admin đánh dấu thất bại",
+      createdAt: new Date().toISOString(),
+    });
+  } else {
+    it.status = to; // "Đang xử lý"
   }
-  const { status, userId, from, to, limit, cursor } = parsed.data;
 
-  const where:any = {};
-  if (status) where.status = status;
-  if (userId) where.userId = userId;
-  if (from || to) where.createdAt = { ...(from && { gte: from }), ...(to && { lte: to }) };
-
-  const items = await prisma.withdrawal.findMany({
-    where,
-    orderBy: { id: "desc" },
-    take: limit + 1,
-    ...(cursor && { cursor: { id: cursor }, skip: 1 }),
-    select: { id:true, userId:true, amount:true, status:true, method:true, transactionId:true, note:true, createdAt:true }
-  });
-
-  const hasMore = items.length > limit;
-  const data = hasMore ? items.slice(0, -1) : items;
-  const nextCursor = hasMore ? data[data.length-1].id : null;
-
-  return NextResponse.json({ ok:true, data, nextCursor });
+  return Response.json({ ok: true, item: it });
 }
