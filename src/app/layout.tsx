@@ -11,13 +11,11 @@ import SessionProvider from "@/components/SessionProvider";
 import ThemeRegistry from "@/components/ThemeRegistry";
 import InitialLoader from "@/components/InitialLoader";
 
-
 export const metadata: Metadata = {
   title: "Finance Task App",
   description: "Skeleton app",
   icons: [{ rel: "icon", url: "/favicon.ico" }],
-  viewport:
-    "width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no",
+  // ✅ bỏ viewport ở metadata (Next 14+ yêu cầu dùng export const viewport)
 };
 
 export const viewport: Viewport = {
@@ -27,25 +25,26 @@ export const viewport: Viewport = {
   initialScale: 1,
   maximumScale: 1,
   userScalable: false,
+  viewportFit: "cover", // ✅ iOS safe-area/viewport ổn hơn
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="vi" suppressHydrationWarning>
       <body className="fixed inset-0 overflow-hidden bg-bg-page text-text antialiased">
-        {/* INITIAL SYSTEM LOADING (chạy 1 lần khi load app) */}
         <InitialLoader />
 
-        {/* DIV SCROLL DUY NHẤT */}
-        <div className="h-full overflow-y-auto overscroll-none pb-20">
+        {/* ✅ DIV SCROLL DUY NHẤT */}
+        <div
+          id="app-scroll-root"
+          className="h-full overflow-y-auto overscroll-none pb-20"
+        >
           <SessionProvider>
             <ErrorBoundary>
               <ThemeRegistry>
                 <MenuProvider>
                   <RootClient>
-                    <ToastProvider>
-                      {children}
-                    </ToastProvider>
+                    <ToastProvider>{children}</ToastProvider>
                   </RootClient>
                 </MenuProvider>
               </ThemeRegistry>
